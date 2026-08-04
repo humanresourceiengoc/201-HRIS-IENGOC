@@ -81,6 +81,8 @@ export default function App() {
     return urlParams.get('verify') || urlParams.get('verifyEmp') || urlParams.get('empId') || urlParams.get('id') || null;
   });
 
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+
   const addToast = useCallback((message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
     const id = `toast_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     setToasts(prev => [...prev, { id, message, type }]);
@@ -427,8 +429,6 @@ export default function App() {
     import: 'Document Requirements & Data Import / Export',
     users: 'System User Accounts & Roles Management'
   };
-
-  const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   const handleManualCloudSync = async () => {
     if (!company) return;

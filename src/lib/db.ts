@@ -390,21 +390,35 @@ const SEED_SEB_EMPLOYEES: Employee[] = [
   }
 ];
 
+export function getDeletedEmployees(company: CompanyKey): Set<string> {
+  try {
+    const raw = localStorage.getItem(`deleted_emps_${company}`);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return new Set(arr);
+    }
+  } catch (e) {}
+  return new Set();
+}
+
 export function getEmployees(company?: CompanyKey | null | string): Employee[] {
   const targetCompany: CompanyKey = (company === 'iencc' || company === 'seb') ? company : 'iencc';
   const data = localStorage.getItem(STORAGE_KEYS.employees(targetCompany));
   const defaultSeed = targetCompany === 'seb' ? SEED_SEB_EMPLOYEES : SEED_IENCC_EMPLOYEES;
+  const hasSeededEmps = localStorage.getItem('seeded_firestore_employees_' + targetCompany) === 'true';
+  const deletedSet = getDeletedEmployees(targetCompany);
 
-  if (!data) {
-    // Optional local cache is empty; return defaultSeed only for initial temporary display while Firestore connects
-    return defaultSeed;
+  if (!data && !hasSeededEmps) {
+    return defaultSeed.filter(e => !deletedSet.has(e.id) && (!e.empId || !deletedSet.has(e.empId)));
   }
   try {
-    const parsed = JSON.parse(data);
+    const parsed = JSON.parse(data || '[]');
     if (!Array.isArray(parsed)) return [];
 
-    // Remove legacy dummy employees (Juan Dela Cruz, Maria Clara Santos, Jose Rizal, Andres Bonifacio)
     const cleaned = parsed.filter(e =>
+      e &&
+      !deletedSet.has(e.id) &&
+      (!e.empId || !deletedSet.has(e.empId)) &&
       e.id !== 'emp_ien_001' &&
       e.id !== 'emp_ien_002' &&
       e.id !== 'emp_ien_003' &&
@@ -448,6 +462,14 @@ export function saveEmployee(company: CompanyKey, employee: Partial<Employee>): 
     employees.push(savedEmp);
   }
 
+  // Remove from deleted set if re-saved
+  const deletedSet = getDeletedEmployees(company);
+  if (deletedSet.has(savedEmp.id) || (savedEmp.empId && deletedSet.has(savedEmp.empId))) {
+    deletedSet.delete(savedEmp.id);
+    if (savedEmp.empId) deletedSet.delete(savedEmp.empId);
+    localStorage.setItem(`deleted_emps_${company}`, JSON.stringify(Array.from(deletedSet)));
+  }
+
   localStorage.setItem(STORAGE_KEYS.employees(company), JSON.stringify(employees));
   try {
     const cleanEmp = cleanFirestoreData({ ...savedEmp, company });
@@ -462,10 +484,29 @@ export function saveEmployee(company: CompanyKey, employee: Partial<Employee>): 
 
 export function deleteEmployee(company: CompanyKey, id: string): void {
   const employees = getEmployees(company);
-  const filtered = employees.filter(e => e.id !== id);
+  const targetEmp = employees.find(e => e.id === id || e.empId === id);
+  const empIdToDelete = targetEmp?.id || id;
+  const customEmpId = targetEmp?.empId;
+
+  const filtered = employees.filter(e => e.id !== empIdToDelete && e.id !== id && e.empId !== id);
   localStorage.setItem(STORAGE_KEYS.employees(company), JSON.stringify(filtered));
+
+  const deletedSet = getDeletedEmployees(company);
+  deletedSet.add(empIdToDelete);
+  if (customEmpId) deletedSet.add(customEmpId);
+  deletedSet.add(id);
+  localStorage.setItem(`deleted_emps_${company}`, JSON.stringify(Array.from(deletedSet)));
+
   try {
-    deleteDoc(doc(firestoreDb, 'employees', id)).catch(() => {});
+    deleteDoc(doc(firestoreDb, 'employees', empIdToDelete)).catch(err => {
+      console.warn('Firestore employee delete warning:', err);
+    });
+    if (id !== empIdToDelete) {
+      deleteDoc(doc(firestoreDb, 'employees', id)).catch(() => {});
+    }
+    if (customEmpId && customEmpId !== id && customEmpId !== empIdToDelete) {
+      deleteDoc(doc(firestoreDb, 'employees', customEmpId)).catch(() => {});
+    }
   } catch (err) {}
 }
 
@@ -1023,6 +1064,7 @@ export function subscribeToEmployees(
 
   return onSnapshot(colRef, (snapshot) => {
     const remoteEmployeesMap = new Map<string, Employee>();
+    const deletedSet = getDeletedEmployees(company);
 
     snapshot.forEach(docSnap => {
       const data = docSnap.data() as Employee & { company?: CompanyKey };
@@ -1039,6 +1081,12 @@ export function subscribeToEmployees(
         (data.firstName === 'Juan' && data.lastName === 'Dela Cruz');
 
       if (isLegacyDummy) {
+        deleteDoc(docSnap.ref).catch(() => {});
+        return;
+      }
+
+      const empId = data.id || docId;
+      if (deletedSet.has(empId) || (data.empId && deletedSet.has(data.empId)) || deletedSet.has(docId)) {
         deleteDoc(docSnap.ref).catch(() => {});
         return;
       }
@@ -1062,41 +1110,36 @@ export function subscribeToEmployees(
       if (data && empCompany === company) {
         const empRecord: Employee = {
           ...data,
-          id: data.id || docId,
+          id: empId,
           company: empCompany
         };
         remoteEmployeesMap.set(empRecord.id, empRecord);
       }
     });
 
-    // Merge default seeds and local storage so Laptop & PC datasets combine instead of replacing each other
-    const defaultSeed = company === 'seb' ? SEED_SEB_EMPLOYEES : SEED_IENCC_EMPLOYEES;
-    const localCached = getEmployees(company);
-
-    defaultSeed.forEach(seedEmp => {
-      if (!remoteEmployeesMap.has(seedEmp.id)) {
-        remoteEmployeesMap.set(seedEmp.id, seedEmp);
-        // Automatically sync missing seed to Firestore so all devices get it
-        const cleanEmp = cleanFirestoreData({ ...seedEmp, company });
-        setDoc(doc(firestoreDb, 'employees', seedEmp.id), cleanEmp, { merge: true }).catch(() => {});
-      }
-    });
-
-    localCached.forEach(localEmp => {
-      if (localEmp && localEmp.id && !remoteEmployeesMap.has(localEmp.id)) {
-        remoteEmployeesMap.set(localEmp.id, localEmp);
-        // Automatically sync local record to Firestore so all devices get it
-        const cleanEmp = cleanFirestoreData({ ...localEmp, company });
-        setDoc(doc(firestoreDb, 'employees', localEmp.id), cleanEmp, { merge: true }).catch(() => {});
-      }
-    });
-
-    const allEmployees = Array.from(remoteEmployeesMap.values()).sort((a, b) =>
+    const hasSeededEmps = localStorage.getItem('seeded_firestore_employees_' + company) === 'true';
+    const remoteEmployees = Array.from(remoteEmployeesMap.values()).sort((a, b) =>
       (a.empId || '').localeCompare(b.empId || '')
     );
 
-    localStorage.setItem(STORAGE_KEYS.employees(company), JSON.stringify(allEmployees));
-    onUpdate(allEmployees);
+    if (remoteEmployees.length > 0 || hasSeededEmps) {
+      localStorage.setItem('seeded_firestore_employees_' + company, 'true');
+      localStorage.setItem(STORAGE_KEYS.employees(company), JSON.stringify(remoteEmployees));
+      onUpdate(remoteEmployees);
+    } else {
+      // First time initialization ONLY if Firestore has no records for this company and has never been seeded
+      const defaultSeed = company === 'seb' ? SEED_SEB_EMPLOYEES : SEED_IENCC_EMPLOYEES;
+      const validSeed = defaultSeed.filter(e => !deletedSet.has(e.id) && (!e.empId || !deletedSet.has(e.empId)));
+
+      validSeed.forEach(emp => {
+        const cleanEmp = cleanFirestoreData({ ...emp, company });
+        setDoc(doc(firestoreDb, 'employees', emp.id), cleanEmp, { merge: true }).catch(() => {});
+      });
+
+      localStorage.setItem('seeded_firestore_employees_' + company, 'true');
+      localStorage.setItem(STORAGE_KEYS.employees(company), JSON.stringify(validSeed));
+      onUpdate(validSeed);
+    }
   }, (err) => {
     console.warn('subscribeToEmployees warning (offline fallback):', err);
     onUpdate(getEmployees(company));

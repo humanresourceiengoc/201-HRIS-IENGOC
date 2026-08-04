@@ -455,20 +455,21 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     onToast(`Salary increase logged! New monthly salary is ₱${newSalNum.toLocaleString()}`, 'success');
   };
 
-  const handleMemoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMemoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
+    try {
+      const fileRes = await saveFileToStorage(file, file.name);
       setMemoForm(prev => ({
         ...prev,
         filename: file.name,
-        dataUrl: ev.target?.result as string
+        dataUrl: fileRes.dataUrl || fileRes.url
       }));
-      onToast(`Attached file: ${file.name} from local storage`, 'info');
-    };
-    reader.readAsDataURL(file);
+      onToast(`Attached file: ${file.name} (synced to cloud)`, 'info');
+    } catch (err: any) {
+      onToast('Failed to attach memo file.', 'error');
+    }
   };
 
   // Issue Memo Handler

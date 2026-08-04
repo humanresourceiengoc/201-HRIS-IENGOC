@@ -1,10 +1,140 @@
 import { CompanyKey, CustomCalendarEvent, DocumentRequirement, Employee, EmployeeDocument, UserAccount, UserRole, CollaboratorPresence } from '../types';
-import { collection, doc, setDoc, deleteDoc, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, onSnapshot, getDocs, getDoc } from 'firebase/firestore';
 import { db as firestoreDb } from './firebase';
 
 const DB_NAME = 'Employee201DB';
 const DB_VERSION = 1;
 const FILE_STORE = 'file_blobs';
+
+// Convert Base64 Data URL to Blob
+export function dataUrlToBlob(dataUrl: string): Blob {
+  try {
+    const parts = dataUrl.split(',');
+    const mime = parts[0].match(/:(.*?);/)?.[1] || 'application/octet-stream';
+    const bstr = atob(parts[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  } catch (e) {
+    return new Blob([], { type: 'application/octet-stream' });
+  }
+}
+
+// Upload file blob to Firestore cloud collection (chunked if > 750KB)
+export async function syncFileBlobToFirestore(
+  fileId: string,
+  dataUrl: string,
+  filename: string,
+  mimeType: string,
+  size: number
+): Promise<void> {
+  try {
+    if (dataUrl.length <= 750000) {
+      await setDoc(
+        doc(firestoreDb, 'file_blobs', fileId),
+        {
+          id: fileId,
+          dataUrl,
+          filename,
+          mimeType,
+          size,
+          isChunked: false,
+          createdAt: new Date().toISOString()
+        },
+        { merge: true }
+      );
+    } else {
+      const chunkSize = 500000;
+      const totalChunks = Math.ceil(dataUrl.length / chunkSize);
+      await setDoc(
+        doc(firestoreDb, 'file_blobs', fileId),
+        {
+          id: fileId,
+          isChunked: true,
+          totalChunks,
+          filename,
+          mimeType,
+          size,
+          createdAt: new Date().toISOString()
+        },
+        { merge: true }
+      );
+
+      const chunkPromises = [];
+      for (let i = 0; i < totalChunks; i++) {
+        const chunkStr = dataUrl.substring(i * chunkSize, (i + 1) * chunkSize);
+        chunkPromises.push(
+          setDoc(doc(firestoreDb, 'file_blobs', fileId, 'chunks', `chunk_${i}`), {
+            index: i,
+            chunkData: chunkStr
+          })
+        );
+      }
+      await Promise.all(chunkPromises);
+    }
+  } catch (err) {
+    console.warn('Firestore file blob upload warning:', err);
+  }
+}
+
+// Fetch file blob from Firestore when missing in local IndexedDB
+export async function fetchFileBlobFromFirestore(
+  fileId: string
+): Promise<{ blob: Blob; filename: string; mimeType: string; dataUrl: string } | null> {
+  try {
+    const docRef = doc(firestoreDb, 'file_blobs', fileId);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return null;
+
+    const data = docSnap.data();
+    let dataUrl = '';
+    if (data.isChunked) {
+      const totalChunks = data.totalChunks || 0;
+      const chunkSnaps = await getDocs(collection(firestoreDb, 'file_blobs', fileId, 'chunks'));
+      const chunkMap = new Map<number, string>();
+      chunkSnaps.forEach((cSnap) => {
+        const cData = cSnap.data();
+        chunkMap.set(cData.index, cData.chunkData);
+      });
+      let fullUrl = '';
+      for (let i = 0; i < totalChunks; i++) {
+        fullUrl += chunkMap.get(i) || '';
+      }
+      dataUrl = fullUrl;
+    } else {
+      dataUrl = data.dataUrl || '';
+    }
+
+    if (dataUrl) {
+      const blob = dataUrlToBlob(dataUrl);
+      const filename = data.filename || 'document';
+      const mimeType = data.mimeType || blob.type;
+
+      // Cache locally in IndexedDB for instant future access on this device
+      openIndexedDB()
+        .then((db) => {
+          const tx = db.transaction(FILE_STORE, 'readwrite');
+          tx.objectStore(FILE_STORE).put({
+            id: fileId,
+            blob,
+            filename,
+            mimeType,
+            size: data.size || blob.size,
+            createdAt: new Date().toISOString()
+          });
+        })
+        .catch(() => {});
+
+      return { blob, filename, mimeType, dataUrl };
+    }
+  } catch (err) {
+    console.warn('Firestore file blob fetch error:', err);
+  }
+  return null;
+}
 
 // Standard Default Requirements
 export const DEFAULT_REQUIREMENTS: DocumentRequirement[] = [
@@ -55,10 +185,11 @@ function openIndexedDB(): Promise<IDBDatabase> {
   });
 }
 
-// Save File Blob to IndexedDB
+// Save File Blob to IndexedDB & Sync to Firestore Cloud Storage
 export async function saveFileToStorage(file: File | Blob, filename: string): Promise<{
   fileId: string;
   url: string;
+  dataUrl: string;
   filename: string;
   mimeType: string;
   size: number;
@@ -67,6 +198,15 @@ export async function saveFileToStorage(file: File | Blob, filename: string): Pr
   const mimeType = file.type || 'application/octet-stream';
   const size = file.size;
 
+  // Read file as Data URL for Cloud sync and universal preview
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+
+  // Save to IndexedDB locally for instant local performance
   try {
     const db = await openIndexedDB();
     await new Promise<void>((resolve, reject) => {
@@ -77,25 +217,21 @@ export async function saveFileToStorage(file: File | Blob, filename: string): Pr
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
     });
-
-    // Generate Object URL for immediate preview
-    const url = URL.createObjectURL(file);
-    return { fileId, url, filename, mimeType, size };
   } catch (err) {
-    console.warn('IndexedDB failed, falling back to FileReader Data URL:', err);
-    // Fallback to Data URL if IndexedDB fails
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(file);
-    });
-    return { fileId, url: dataUrl, filename, mimeType, size };
+    console.warn('IndexedDB save warning:', err);
   }
+
+  // Upload to Firestore file_blobs collection so it is viewable across ALL devices
+  syncFileBlobToFirestore(fileId, dataUrl, filename, mimeType, size).catch(err => {
+    console.warn('Firestore file sync warning:', err);
+  });
+
+  return { fileId, url: dataUrl, dataUrl, filename, mimeType, size };
 }
 
-// Retrieve Blob from IndexedDB
+// Retrieve Blob from IndexedDB or Firestore Cloud Storage
 export async function getFileFromStorage(fileId: string): Promise<{ blob: Blob; filename: string; mimeType: string } | null> {
+  // 1. Check local IndexedDB first
   try {
     const db = await openIndexedDB();
     const record = await new Promise<any>((resolve, reject) => {
@@ -111,15 +247,23 @@ export async function getFileFromStorage(fileId: string): Promise<{ blob: Blob; 
   } catch (e) {
     console.warn('Error fetching file from IndexedDB:', e);
   }
+
+  // 2. Fetch from Firestore Cloud Storage if not found locally
+  const remoteFile = await fetchFileBlobFromFirestore(fileId);
+  if (remoteFile) {
+    return { blob: remoteFile.blob, filename: remoteFile.filename, mimeType: remoteFile.mimeType };
+  }
+
   return null;
 }
 
-// Get Object URL for a stored file
+// Get Object URL or Data URL for a stored file
 export async function getFileUrl(fileIdOrUrl: string): Promise<string> {
   if (!fileIdOrUrl) return '';
-  if (fileIdOrUrl.startsWith('data:') || fileIdOrUrl.startsWith('blob:') || fileIdOrUrl.startsWith('http')) {
+  if (fileIdOrUrl.startsWith('data:') || fileIdOrUrl.startsWith('http://') || fileIdOrUrl.startsWith('https://')) {
     return fileIdOrUrl;
   }
+
   const fileData = await getFileFromStorage(fileIdOrUrl);
   if (fileData) {
     return URL.createObjectURL(fileData.blob);
@@ -132,7 +276,7 @@ export async function triggerFileDownload(fileIdOrUrl: string, filename: string)
   let downloadUrl = fileIdOrUrl;
   let revokeNeeded = false;
 
-  if (fileIdOrUrl.startsWith('file_')) {
+  if (fileIdOrUrl.startsWith('file_') || fileIdOrUrl.startsWith('blob:')) {
     const fileData = await getFileFromStorage(fileIdOrUrl);
     if (fileData) {
       downloadUrl = URL.createObjectURL(fileData.blob);
@@ -153,7 +297,7 @@ export async function triggerFileDownload(fileIdOrUrl: string, filename: string)
   }
 }
 
-// Delete File Blob from IndexedDB
+// Delete File Blob from IndexedDB & Firestore
 export async function deleteFileFromStorage(fileId: string): Promise<void> {
   if (!fileId || !fileId.startsWith('file_')) return;
   try {
@@ -168,6 +312,10 @@ export async function deleteFileFromStorage(fileId: string): Promise<void> {
   } catch (e) {
     console.warn('Error deleting file from IndexedDB:', e);
   }
+
+  try {
+    await deleteDoc(doc(firestoreDb, 'file_blobs', fileId));
+  } catch (e) {}
 }
 
 // LocalStorage Persistence Helpers

@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+/* Hide print-only elements on normal screen display */
+.print-only {
+  display: none !important;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 4mm 5mm;
+  }
+
+  /* Force clean white print background */
+  html, body, #root {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide navigation, sidebars, buttons, modal overlays, and print:hidden elements */
+  header,
+  aside,
+  nav,
+  button,
+  .no-print,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Hide fixed modal backdrop overlays and non-print dialogs */
+  .bg-slate-900\/80,
+  .bg-slate-900\/90,
+  .bg-black\/50,
+  .backdrop-blur-sm,
+  .backdrop-blur-xs,
+  .fixed.inset-0 {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Show print-only containers cleanly on page */
+  .print-only,
+  .print-document-sheet {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
+  }
+
+  .print-only *,
+  .print-document-sheet * {
+    visibility: visible !important;
+  }
+
+  /* ID Card print badge modal */
+  .print-id-card-modal {
+    display: flex !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    background: #ffffff !important;
+    padding: 10px !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+  }
+}
+
+

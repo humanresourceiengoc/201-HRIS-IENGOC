@@ -1,0 +1,8 @@
+{
+  "name": "f01 IENGOC 201 HRIS IENCC \u0026 SEB Employee",
+  "description": "Employee 201 Database Management System for IENCC and SEB Equipment Corp with document requirement preview, PDF viewing, and local storage download support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

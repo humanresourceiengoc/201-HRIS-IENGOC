@@ -10,7 +10,7 @@ const config = {
 };
 
 const app = getApps().length === 0 ? initializeApp(config) : getApp();
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || undefined);
+export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId || undefined);
 export const auth = getAuth(app);
 export const rtdb = getDatabase(app);
 export default app;

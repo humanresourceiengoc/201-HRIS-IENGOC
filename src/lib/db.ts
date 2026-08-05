@@ -1,6 +1,7 @@
 import { CompanyKey, CustomCalendarEvent, DocumentRequirement, Employee, EmployeeDocument, UserAccount, UserRole, CollaboratorPresence } from '../types';
 import { collection, doc, setDoc, deleteDoc, onSnapshot, getDocs, getDoc } from 'firebase/firestore';
 import { db as firestoreDb } from './firebase';
+import { triggerAutoGoogleSheetsSync } from './googleSheets';
 
 const DB_NAME = 'Employee201DB';
 const DB_VERSION = 1;
@@ -627,6 +628,11 @@ export function saveEmployee(company: CompanyKey, employee: Partial<Employee>): 
   } catch (err) {
     console.warn('Firestore employee save error:', err);
   }
+
+  // Auto-sync to Google Sheets in background if connected
+  const companyFullName = company === 'iencc' ? 'I-ENERGIES CONSTRUCTION CORPORATION' : 'SUPERIOR ENERGIES BUILDERS & DEVELOPMENT CORP.';
+  triggerAutoGoogleSheetsSync(company, companyFullName, employees);
+
   return savedEmp;
 }
 
@@ -656,6 +662,10 @@ export function deleteEmployee(company: CompanyKey, id: string): void {
       deleteDoc(doc(firestoreDb, 'employees', customEmpId)).catch(() => {});
     }
   } catch (err) {}
+
+  // Auto-sync to Google Sheets in background if connected
+  const companyFullName = company === 'iencc' ? 'I-ENERGIES CONSTRUCTION CORPORATION' : 'SUPERIOR ENERGIES BUILDERS & DEVELOPMENT CORP.';
+  triggerAutoGoogleSheetsSync(company, companyFullName, filtered);
 }
 
 export function saveAllEmployees(company: CompanyKey, employees: Employee[]): void {
@@ -781,6 +791,7 @@ const DEFAULT_USERS: Record<CompanyKey, UserAccount[]> = {
       company: 'iencc',
       emailVerified: true,
       blocked: false,
+      approved: true,
       verificationStatus: 'approved'
     },
     {
@@ -791,6 +802,7 @@ const DEFAULT_USERS: Record<CompanyKey, UserAccount[]> = {
       company: 'iencc',
       emailVerified: true,
       blocked: false,
+      approved: true,
       verificationStatus: 'approved'
     }
   ],
@@ -803,6 +815,7 @@ const DEFAULT_USERS: Record<CompanyKey, UserAccount[]> = {
       company: 'seb',
       emailVerified: true,
       blocked: false,
+      approved: true,
       verificationStatus: 'approved'
     },
     {
@@ -813,6 +826,7 @@ const DEFAULT_USERS: Record<CompanyKey, UserAccount[]> = {
       company: 'seb',
       emailVerified: true,
       blocked: false,
+      approved: true,
       verificationStatus: 'approved'
     }
   ]
@@ -843,13 +857,17 @@ export async function deleteUserFromFirestore(email: string): Promise<void> {
 export async function syncUserToFirestore(user: UserAccount): Promise<void> {
   try {
     const cleanEmailId = user.email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const isApproved = user.approved === true || user.verificationStatus === 'approved' || user.email.toLowerCase() === 'humanresource.iengoc@gmail.com';
     const payload = cleanFirestoreData({
       ...user,
+      approved: isApproved,
+      verificationStatus: isApproved ? 'approved' : (user.verificationStatus || 'pending'),
       email: user.email.trim().toLowerCase(),
       updatedAt: new Date().toISOString()
     });
     await Promise.all([
       setDoc(doc(firestoreDb, 'users', cleanEmailId), payload, { merge: true }).catch(() => {}),
+      setDoc(doc(firestoreDb, 'users', user.id), payload, { merge: true }).catch(() => {}),
       setDoc(doc(firestoreDb, 'hris_users', cleanEmailId), payload, { merge: true }).catch(() => {})
     ]);
   } catch (err) {

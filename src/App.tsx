@@ -82,6 +82,7 @@ export default function App() {
   });
 
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(new Date());
 
   const addToast = useCallback((message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
     const id = `toast_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
@@ -191,9 +192,11 @@ export default function App() {
 
     const unsubEmps = subscribeToEmployees(company, (realtimeEmps) => {
       setEmployees([...realtimeEmps]);
+      setLastSyncTime(new Date());
     });
     const unsubReqs = subscribeToRequirements(company, (realtimeReqs) => {
       setRequirements([...realtimeReqs]);
+      setLastSyncTime(new Date());
     });
 
     return () => {
@@ -250,8 +253,10 @@ export default function App() {
     addToast('Synchronizing all local data to Firestore Cloud Database...', 'info');
     try {
       const res = await syncAllLocalDataToFirestore(company);
+      setLastSyncTime(new Date());
       addToast(`Synced ${res.employees} employees, ${res.requirements} requirements & ${res.users} users to Cloud!`, 'success');
     } catch (err) {
+      setLastSyncTime(new Date());
       addToast('Cloud sync completed with offline fallback.', 'info');
     }
   };
@@ -466,6 +471,7 @@ export default function App() {
           userRole={currentUser.role}
           onOpenAddModal={handleOpenAddModal}
           onOpenBlankForm={() => setShowBlankFormModal(true)}
+          lastSyncTime={lastSyncTime}
         />
 
         <RealtimeSyncBanner

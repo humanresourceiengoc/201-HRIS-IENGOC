@@ -87,7 +87,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
       onToast('Only Main Admin / Owner (humanresource.iengoc@gmail.com) is authorized to approve user registrations.', 'error');
       return;
     }
-    const updated = { ...user, verificationStatus: 'approved' as const };
+    const updated = { ...user, approved: true, verificationStatus: 'approved' as const };
     saveUser(company, updated);
     onRefreshUsers();
     onToast(`Approved HR access for ${user.email} (${user.category || 'User'})!`, 'success');
@@ -98,7 +98,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
       onToast('Only Main Admin / Owner (humanresource.iengoc@gmail.com) is authorized to reject user registrations.', 'error');
       return;
     }
-    const updated = { ...user, verificationStatus: 'rejected' as const };
+    const updated = { ...user, approved: false, verificationStatus: 'rejected' as const };
     saveUser(company, updated);
     onRefreshUsers();
     onToast(`Declined registration for ${user.email}.`, 'info');
@@ -305,15 +305,15 @@ export const UserManagement: React.FC<UserManagementProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 sm:w-80">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+          <div className="flex items-center gap-2 w-full sm:w-80">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search user email or name..."
-                className="w-full pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
               />
             </div>
           </div>

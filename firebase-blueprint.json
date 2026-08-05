@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "UserAccount": {
+      "title": "User Account",
+      "description": "System user account with role and approval status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "viewer", "user"] },
+        "category": { "type": "string" },
+        "approved": { "type": "boolean" },
+        "verificationStatus": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "company": { "type": "string" },
+        "emailVerified": { "type": "boolean" },
+        "blocked": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "email", "role"]
+    },
+    "Employee": {
+      "title": "Employee",
+      "description": "Employee 201 profile record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "empId": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "company": { "type": "string" }
+      },
+      "required": ["id", "empId", "firstName", "lastName"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserAccount" },
+      "description": "Collection of user accounts with approval and role settings"
+    },
+    "/hris_users/{userId}": {
+      "schema": { "$ref": "#/entities/UserAccount" },
+      "description": "Legacy alias collection of user accounts"
+    },
+    "/employees/{employeeId}": {
+      "schema": { "$ref": "#/entities/Employee" },
+      "description": "201 Employee records"
+    },
+    "/requirements/{reqId}": {
+      "schema": "DocumentRequirement",
+      "description": "Document requirements catalog"
+    },
+    "/custom_events/{eventId}": {
+      "schema": "CustomCalendarEvent",
+      "description": "Calendar events"
+    },
+    "/file_blobs/{fileId}": {
+      "schema": "FileBlob",
+      "description": "Cloud file attachments and documents"
+    },
+    "/presence/{userId}": {
+      "schema": "CollaboratorPresence",
+      "description": "Real-time user online presence"
+    }
+  }
+}

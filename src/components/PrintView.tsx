@@ -19,27 +19,27 @@ export const PrintView: React.FC<PrintViewProps> = ({ company, employee, require
   const docs = employee.documents || {};
 
   return (
-    <div className="print-only p-8 bg-white text-slate-900 font-sans leading-relaxed">
+    <div className="print-only p-4 bg-white text-slate-900 font-sans leading-snug text-[11px]">
       {/* Print Header */}
-      <div className="text-center pb-4 mb-6 border-b-2 border-slate-900 relative">
+      <div className="text-center pb-3 mb-4 border-b-2 border-slate-900 relative avoid-page-break break-inside-avoid">
         <div className="absolute left-0 top-0 w-12 h-12 flex items-center justify-center">
           {isSeb ? <SebLogo size={44} /> : <IenLogo size={44} />}
         </div>
-        <h1 className="text-xl font-black uppercase tracking-wider pl-12">{companyFullName}</h1>
+        <h1 className="text-lg font-black uppercase tracking-wider pl-12">{companyFullName}</h1>
         <p className="text-xs font-semibold text-slate-700 mt-0.5 pl-12">
           {companyAddress} • TIN: {companyTin}
         </p>
-        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+        <p className="text-[10.5px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
           Employee 201 Personal Record & File Document Verification
         </p>
       </div>
 
       {/* Basic Grid */}
-      <div className="flex gap-6 mb-6">
+      <div className="flex gap-4 mb-4 avoid-page-break break-inside-avoid">
         {employee.photoUrl && (
-          <img src={employee.photoUrl} alt="" className="w-28 h-28 object-cover rounded-xl border border-slate-300" />
+          <img src={employee.photoUrl} alt="" className="w-24 h-24 object-cover rounded-xl border border-slate-300 shrink-0" />
         )}
-        <div className="flex-1 grid grid-cols-3 gap-3 text-xs">
+        <div className="flex-1 grid grid-cols-3 gap-2.5 text-xs">
           <div>
             <span className="block text-[10px] font-bold uppercase text-slate-500">Employee ID</span>
             <span className="font-bold font-mono text-blue-800">{employee.empId || 'N/A'}</span>
@@ -72,9 +72,9 @@ export const PrintView: React.FC<PrintViewProps> = ({ company, employee, require
       </div>
 
       {/* Employment & Organizational Assignment */}
-      <div className="mb-6 space-y-2 text-xs">
-        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-1">Employment & Organizational Assignment</h3>
-        <div className="grid grid-cols-3 gap-3">
+      <div className="mb-4 space-y-1.5 text-xs avoid-page-break break-inside-avoid">
+        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-0.5">Employment & Organizational Assignment</h3>
+        <div className="grid grid-cols-3 gap-2.5">
           <div><span className="block text-[10px] text-slate-500 font-bold uppercase">Division / Business Unit</span>{employee.division || '—'}</div>
           <div><span className="block text-[10px] text-slate-500 font-bold uppercase">Location / Branch</span>{employee.locationBranch || 'Mandaluyong'} {employee.branchCode ? `(${employee.branchCode})` : ''}</div>
           <div><span className="block text-[10px] text-slate-500 font-bold uppercase">Immediate Supervisor</span>{employee.immediateSupervisor || '—'}</div>
@@ -88,11 +88,11 @@ export const PrintView: React.FC<PrintViewProps> = ({ company, employee, require
       </div>
 
       {/* Personal Info */}
-      <div className="mb-6 space-y-2 text-xs">
-        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-1">Personal Details</h3>
-        <div className="grid grid-cols-3 gap-3">
+      <div className="mb-4 space-y-1.5 text-xs avoid-page-break break-inside-avoid">
+        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-0.5">Personal Details</h3>
+        <div className="grid grid-cols-3 gap-2.5">
           <div><span className="block text-[10px] text-slate-500 font-bold uppercase">Current Address</span>{employee.currentAddress || '—'}</div>
-          <div><span className="block text-[10px] text-slate-500 font-bold uppercase">Birthdate / Age</span>{employee.birthdate} ({employee.age} yrs)</div>
+          <div><span className="block text-[10px] text-slate-500 font-bold uppercase">Birthdate / Age</span>{employee.birthdate} ({employee.age || '—'} yrs)</div>
           <div><span className="block text-[10px] text-slate-500 font-bold uppercase">Civil Status / Gender</span>{employee.civilStatus} / {employee.gender}</div>
           <div><span className="block text-[10px] text-slate-500 font-bold uppercase">Mobile Number</span>{employee.mobileNumber || '—'}</div>
           <div><span className="block text-[10px] text-slate-500 font-bold uppercase">Personal Email</span>{employee.personalEmail || '—'}</div>
@@ -101,15 +101,15 @@ export const PrintView: React.FC<PrintViewProps> = ({ company, employee, require
       </div>
 
       {/* Government IDs & Bank Accounts */}
-      <div className="mb-6 space-y-2 text-xs">
-        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-1">Government Accounts, Payroll Bank & Benefits</h3>
-        <div className="grid grid-cols-4 gap-3 font-mono">
+      <div className="mb-4 space-y-1.5 text-xs avoid-page-break break-inside-avoid">
+        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-0.5">Government Accounts, Payroll Bank & Benefits</h3>
+        <div className="grid grid-cols-4 gap-2.5 font-mono">
           <div><span className="block text-[10px] font-sans text-slate-500 font-bold uppercase">SSS Number</span>{employee.sss || '—'}</div>
           <div><span className="block text-[10px] font-sans text-slate-500 font-bold uppercase">PAG-IBIG MID</span>{employee.pagibig || '—'}</div>
           <div><span className="block text-[10px] font-sans text-slate-500 font-bold uppercase">PhilHealth No.</span>{employee.philhealth || '—'}</div>
           <div><span className="block text-[10px] font-sans text-slate-500 font-bold uppercase">TIN</span>{employee.tin || '—'}</div>
         </div>
-        <div className="grid grid-cols-3 gap-3 pt-1">
+        <div className="grid grid-cols-3 gap-2.5 pt-1">
           <div><span className="block text-[10px] text-slate-500 font-bold uppercase">Payroll Bank & Account No.</span>{employee.bankName || 'BDO'} - <span className="font-mono font-bold">{employee.bankAccountNumber || '—'}</span></div>
           <div><span className="block text-[10px] text-slate-500 font-bold uppercase">Bank Account Name</span>{employee.bankAccountName || `${employee.firstName} ${employee.lastName}`}</div>
           <div>
@@ -125,29 +125,29 @@ export const PrintView: React.FC<PrintViewProps> = ({ company, employee, require
 
       {/* Active Government Loans (if present) */}
       {employee.govLoans && employee.govLoans.length > 0 && (
-        <div className="mb-6 space-y-2 text-xs">
-          <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-1">Active Government & Company Loans</h3>
-          <table className="w-full text-left text-[11px] border border-slate-200">
+        <div className="mb-4 space-y-1.5 text-xs avoid-page-break break-inside-avoid">
+          <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-0.5">Active Government & Company Loans</h3>
+          <table className="w-full text-left text-[10.5px] border border-slate-200">
             <thead>
               <tr className="bg-slate-100 text-slate-700 border-b">
-                <th className="p-1.5 font-bold">Loan Type & Ref #</th>
-                <th className="p-1.5 font-bold">Principal Amount</th>
-                <th className="p-1.5 font-bold">Monthly Deduction</th>
-                <th className="p-1.5 font-bold">Start - End Date</th>
-                <th className="p-1.5 font-bold">Status</th>
+                <th className="p-1 font-bold">Loan Type & Ref #</th>
+                <th className="p-1 font-bold">Principal Amount</th>
+                <th className="p-1 font-bold">Monthly Deduction</th>
+                <th className="p-1 font-bold">Start - End Date</th>
+                <th className="p-1 font-bold">Status</th>
               </tr>
             </thead>
             <tbody>
               {employee.govLoans.map(loan => (
                 <tr key={loan.id} className="border-b">
-                  <td className="p-1.5">
+                  <td className="p-1">
                     <div className="font-bold">{loan.type}</div>
                     <div className="text-[10px] text-slate-500 font-mono">Ref: {loan.referenceNo || 'N/A'}</div>
                   </td>
-                  <td className="p-1.5 font-mono">₱{loan.loanAmount.toLocaleString()}</td>
-                  <td className="p-1.5 font-mono font-bold text-rose-700">₱{loan.monthlyDeduction.toLocaleString()}</td>
-                  <td className="p-1.5 whitespace-nowrap">{loan.startDate} to {loan.endDate || 'Active'}</td>
-                  <td className="p-1.5">
+                  <td className="p-1 font-mono">₱{(loan.loanAmount || 0).toLocaleString()}</td>
+                  <td className="p-1 font-mono font-bold text-rose-700">₱{(loan.monthlyDeduction || 0).toLocaleString()}</td>
+                  <td className="p-1 whitespace-nowrap">{loan.startDate} to {loan.endDate || 'Active'}</td>
+                  <td className="p-1">
                     <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
                       {loan.status}
                     </span>
@@ -160,9 +160,9 @@ export const PrintView: React.FC<PrintViewProps> = ({ company, employee, require
       )}
 
       {/* Emergency Contact */}
-      <div className="mb-6 space-y-2 text-xs">
-        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-1">Emergency Contact</h3>
-        <div className="grid grid-cols-3 gap-3">
+      <div className="mb-4 space-y-1.5 text-xs avoid-page-break break-inside-avoid">
+        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-0.5">Emergency Contact</h3>
+        <div className="grid grid-cols-3 gap-2.5">
           <div><span className="block text-[10px] text-slate-500 font-bold uppercase">Contact Person</span>{employee.emergencyName || '—'}</div>
           <div><span className="block text-[10px] text-slate-500 font-bold uppercase">Relationship</span>{employee.emergencyRelation || '—'}</div>
           <div><span className="block text-[10px] text-slate-500 font-bold uppercase">Mobile Number</span>{employee.emergencyContact || '—'}</div>
@@ -171,9 +171,9 @@ export const PrintView: React.FC<PrintViewProps> = ({ company, employee, require
       </div>
 
       {/* Family Background Information */}
-      <div className="mb-6 space-y-2 text-xs">
-        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-1">Family Background Information</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="mb-4 space-y-1.5 text-xs avoid-page-break break-inside-avoid">
+        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-0.5">Family Background Information</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           <div><span className="block text-[10px] text-slate-500 font-bold uppercase">Mother&apos;s Maiden Name</span>{employee.motherMaidenName || '—'}</div>
           <div><span className="block text-[10px] text-slate-500 font-bold uppercase">Mother&apos;s Occupation</span>{employee.motherOccupation || '—'}</div>
           <div><span className="block text-[10px] text-slate-500 font-bold uppercase">Father&apos;s Name</span>{employee.fatherName || '—'}</div>
@@ -188,29 +188,29 @@ export const PrintView: React.FC<PrintViewProps> = ({ company, employee, require
 
       {/* Work Experience / Career History (if present) */}
       {employee.workExperience && employee.workExperience.length > 0 && (
-        <div className="mb-6 space-y-2 text-xs">
-          <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-1">Previous Work Experience & Employment History</h3>
-          <table className="w-full text-left text-[11px] border border-slate-200">
+        <div className="mb-4 space-y-1.5 text-xs avoid-page-break break-inside-avoid">
+          <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-0.5">Previous Work Experience & Employment History</h3>
+          <table className="w-full text-left text-[10.5px] border border-slate-200">
             <thead>
               <tr className="bg-slate-100 text-slate-700 border-b">
-                <th className="p-1.5 font-bold">Company & Position</th>
-                <th className="p-1.5 font-bold">Duration</th>
-                <th className="p-1.5 font-bold">Department / Industry</th>
-                <th className="p-1.5 font-bold">Responsibilities</th>
-                <th className="p-1.5 font-bold">Salary & Reason for Leaving</th>
+                <th className="p-1 font-bold">Company & Position</th>
+                <th className="p-1 font-bold">Duration</th>
+                <th className="p-1 font-bold">Department / Industry</th>
+                <th className="p-1 font-bold">Responsibilities</th>
+                <th className="p-1 font-bold">Salary & Reason for Leaving</th>
               </tr>
             </thead>
             <tbody>
               {employee.workExperience.map(exp => (
                 <tr key={exp.id} className="border-b">
-                  <td className="p-1.5">
+                  <td className="p-1">
                     <div className="font-bold">{exp.companyName}</div>
                     <div className="text-blue-700">{exp.position}</div>
                   </td>
-                  <td className="p-1.5 whitespace-nowrap">{exp.startDate} — {exp.isCurrent ? 'Present' : (exp.endDate || '—')}</td>
-                  <td className="p-1.5">{exp.departmentOrIndustry || '—'}</td>
-                  <td className="p-1.5">{exp.responsibilities || '—'}</td>
-                  <td className="p-1.5">
+                  <td className="p-1 whitespace-nowrap">{exp.startDate} — {exp.isCurrent ? 'Present' : (exp.endDate || '—')}</td>
+                  <td className="p-1">{exp.departmentOrIndustry || '—'}</td>
+                  <td className="p-1">{exp.responsibilities || '—'}</td>
+                  <td className="p-1">
                     <div className="font-mono">{exp.salary || '—'}</div>
                     <div className="text-[10px] text-slate-500">{exp.reasonForLeaving || '—'}</div>
                   </td>
@@ -223,26 +223,26 @@ export const PrintView: React.FC<PrintViewProps> = ({ company, employee, require
 
       {/* Salary Adjustments History (if present) */}
       {employee.salaryHistory && employee.salaryHistory.length > 0 && (
-        <div className="mb-6 space-y-2 text-xs">
-          <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-1">Salary Adjustment & Increase Log</h3>
-          <table className="w-full text-left text-[11px] border border-slate-200">
+        <div className="mb-4 space-y-1.5 text-xs avoid-page-break break-inside-avoid">
+          <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-0.5">Salary Adjustment & Increase Log</h3>
+          <table className="w-full text-left text-[10.5px] border border-slate-200">
             <thead>
               <tr className="bg-slate-100 text-slate-700 border-b">
-                <th className="p-1.5 font-bold">Effective Date</th>
-                <th className="p-1.5 font-bold">Previous Salary</th>
-                <th className="p-1.5 font-bold">New Salary</th>
-                <th className="p-1.5 font-bold">Reason</th>
-                <th className="p-1.5 font-bold">Approved By</th>
+                <th className="p-1 font-bold">Effective Date</th>
+                <th className="p-1 font-bold">Previous Salary</th>
+                <th className="p-1 font-bold">New Salary</th>
+                <th className="p-1 font-bold">Reason</th>
+                <th className="p-1 font-bold">Approved By</th>
               </tr>
             </thead>
             <tbody>
               {employee.salaryHistory.map(sal => (
                 <tr key={sal.id} className="border-b">
-                  <td className="p-1.5">{sal.effectiveDate}</td>
-                  <td className="p-1.5 font-mono">₱{sal.previousSalary.toLocaleString()}</td>
-                  <td className="p-1.5 font-mono font-bold text-emerald-800">₱{sal.newSalary.toLocaleString()}</td>
-                  <td className="p-1.5">{sal.reason}</td>
-                  <td className="p-1.5">{sal.approvedBy}</td>
+                  <td className="p-1">{sal.effectiveDate}</td>
+                  <td className="p-1 font-mono">₱{(sal.previousSalary || 0).toLocaleString()}</td>
+                  <td className="p-1 font-mono font-bold text-emerald-800">₱{(sal.newSalary || 0).toLocaleString()}</td>
+                  <td className="p-1">{sal.reason}</td>
+                  <td className="p-1">{sal.approvedBy}</td>
                 </tr>
               ))}
             </tbody>
@@ -252,12 +252,12 @@ export const PrintView: React.FC<PrintViewProps> = ({ company, employee, require
 
       {/* Issued Memos (if present) */}
       {employee.memos && employee.memos.length > 0 && (
-        <div className="mb-6 space-y-2 text-xs">
-          <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-1">Individual Memos & HR Notices</h3>
-          <div className="space-y-1.5">
+        <div className="mb-4 space-y-1.5 text-xs avoid-page-break break-inside-avoid">
+          <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-0.5">Individual Memos & HR Notices</h3>
+          <div className="space-y-1">
             {employee.memos.map(m => (
-              <div key={m.id} className="p-2 border border-slate-200 rounded">
-                <div className="flex justify-between font-bold text-[11px]">
+              <div key={m.id} className="p-1.5 border border-slate-200 rounded">
+                <div className="flex justify-between font-bold text-[10.5px]">
                   <span>{m.memoNo} - {m.title} ({m.type})</span>
                   <span className="text-slate-500">{m.dateIssued}</span>
                 </div>
@@ -269,22 +269,22 @@ export const PrintView: React.FC<PrintViewProps> = ({ company, employee, require
       )}
 
       {/* Document Requirements Status */}
-      <div className="space-y-2 text-xs">
-        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-1">201 Document Status</h3>
-        <div className="grid grid-cols-2 gap-2">
+      <div className="space-y-1.5 text-xs avoid-page-break break-inside-avoid">
+        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-0.5">201 Document Status</h3>
+        <div className="grid grid-cols-2 gap-1.5">
           {requirements.map(req => {
             const doc = docs[req.id];
             const hasFile = Boolean(doc && (doc.url || doc.fileId));
             const expiry = employee.docExpiries?.[req.id];
 
             return (
-              <div key={req.id} className="p-2 border rounded border-slate-200 flex justify-between items-center">
+              <div key={req.id} className="p-1.5 border rounded border-slate-200 flex justify-between items-center">
                 <div>
                   <span className="font-semibold block">{req.name}</span>
                   {expiry && <span className="text-[9px] text-slate-500">Expires: {expiry}</span>}
                 </div>
-                <span className={`font-bold text-[10px] uppercase ${hasFile ? 'text-emerald-700' : 'text-rose-600'}`}>
-                  {hasFile ? `Complete (${doc.filename})` : 'Pending'}
+                <span className={`font-bold text-[9.5px] uppercase ${hasFile ? 'text-emerald-700' : 'text-rose-600'}`}>
+                  {hasFile ? `Complete (${doc.filename || 'Uploaded'})` : 'Pending'}
                 </span>
               </div>
             );
@@ -293,28 +293,28 @@ export const PrintView: React.FC<PrintViewProps> = ({ company, employee, require
       </div>
 
       {/* Signature & HR Verification Block */}
-      <div className="mt-8 pt-4 border-t-2 border-slate-900 space-y-4">
+      <div className="mt-6 pt-3 border-t-2 border-slate-900 space-y-3 avoid-page-break break-inside-avoid">
         <div className="grid grid-cols-2 gap-8 text-center text-xs">
           <div>
             {employee.employeeSignatureUrl ? (
-              <img src={employee.employeeSignatureUrl} alt="Signature" className="h-10 mx-auto object-contain mb-1" />
+              <img src={employee.employeeSignatureUrl} alt="Signature" className="h-9 mx-auto object-contain mb-1" />
             ) : (
-              <div className="h-10 border-b border-slate-700"></div>
+              <div className="h-8 border-b border-slate-700"></div>
             )}
-            <span className="block font-bold uppercase text-slate-800 text-[11px]">{employee.firstName} {employee.middleName || ''} {employee.lastName} {employee.suffix || ''}</span>
-            <span className="block text-[9.5px] font-semibold text-slate-500 uppercase">Employee Signature</span>
+            <span className="block font-bold uppercase text-slate-800 text-[10.5px]">{employee.firstName} {employee.middleName || ''} {employee.lastName} {employee.suffix || ''}</span>
+            <span className="block text-[9px] font-semibold text-slate-500 uppercase">Employee Signature</span>
           </div>
 
           <div>
-            <div className="h-10 border-b border-slate-700"></div>
-            <span className="block font-bold uppercase text-slate-800 text-[11px]">HR Department Manager / Custodian</span>
-            <span className="block text-[9.5px] font-semibold text-slate-500 uppercase">201 Record Verified & Approved</span>
+            <div className="h-8 border-b border-slate-700"></div>
+            <span className="block font-bold uppercase text-slate-800 text-[10.5px]">HR Department Manager / Custodian</span>
+            <span className="block text-[9px] font-semibold text-slate-500 uppercase">201 Record Verified & Approved</span>
           </div>
         </div>
       </div>
 
       {/* Footer stamp */}
-      <div className="mt-12 pt-4 border-t border-slate-200 text-center text-[10px] text-slate-400">
+      <div className="mt-6 pt-2 border-t border-slate-200 text-center text-[9.5px] text-slate-400 avoid-page-break break-inside-avoid">
         Printed on {new Date().toLocaleDateString('en-US', { dateStyle: 'full' })} • Confidential HR 201 File
       </div>
     </div>

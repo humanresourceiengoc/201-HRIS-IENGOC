@@ -923,7 +923,7 @@ export const BlankInfoSheetModal: React.FC<BlankInfoSheetModalProps> = ({ compan
         </div>
 
         {/* Section VII: Mandatory 201 Submission Checklist */}
-        <div className="space-y-1 p-1.5 border border-slate-300 rounded bg-slate-50/80">
+        <div className="space-y-1 p-1.5 border border-slate-300 rounded bg-slate-50/80 avoid-page-break break-inside-avoid">
           <h2 className="text-[7.5px] font-black uppercase text-slate-900 tracking-wide">
             VII. MANDATORY HR 201 REQUIREMENTS CHECKLIST
           </h2>
@@ -944,7 +944,7 @@ export const BlankInfoSheetModal: React.FC<BlankInfoSheetModalProps> = ({ compan
         </div>
 
         {/* Undertaking & Signatures */}
-        <div className="space-y-1.5 pt-1.5 border-t-2 border-slate-900">
+        <div className="space-y-1.5 pt-1.5 border-t-2 border-slate-900 avoid-page-break break-inside-avoid">
           <p className="text-[6.5px] leading-tight text-slate-800 italic">
             &quot;I hereby certify that all information supplied in this 201 Personnel Data Sheet is true and complete. Pursuant to RA 10173 (Data Privacy Act), I authorize the company to process my data for HR and regulatory compliance.&quot;
           </p>

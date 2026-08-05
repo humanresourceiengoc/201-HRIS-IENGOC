@@ -1,8 +1,126 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Global Catch-All Default Deny
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwnerEmail() {
+      return isSignedIn() && (
+        request.auth.token.email.lower() == 'humanresource.iengoc@gmail.com' ||
+        request.auth.token.email.lower() == 'admn.iencc@gmail.com'
+      );
+    }
+
+    function isApproved() {
+      return isSignedIn() && (
+        isOwnerEmail() ||
+        (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          (
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.approved == true ||
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.verificationStatus == 'approved'
+          ) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.blocked != true
+        ) ||
+        (
+          exists(/databases/$(database)/documents/hris_users/$(request.auth.uid)) &&
+          (
+            get(/databases/$(database)/documents/hris_users/$(request.auth.uid)).data.approved == true ||
+            get(/databases/$(database)/documents/hris_users/$(request.auth.uid)).data.verificationStatus == 'approved'
+          ) &&
+          get(/databases/$(database)/documents/hris_users/$(request.auth.uid)).data.blocked != true
+        )
+      );
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        isOwnerEmail() ||
+        (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
+          (
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.approved == true ||
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.verificationStatus == 'approved'
+          ) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.blocked != true
+        )
+      );
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      
+      allow create: if isSignedIn() && (
+        request.auth.uid == userId || isAdmin()
+      ) && (
+        isOwnerEmail() ||
+        (
+          request.resource.data.role != 'admin' &&
+          request.resource.data.approved != true &&
+          request.resource.data.verificationStatus != 'approved'
+        )
+      );
+
+      allow update: if isAdmin() || (
+        isSignedIn() && request.auth.uid == userId &&
+        request.resource.data.approved == resource.data.approved &&
+        request.resource.data.verificationStatus == resource.data.verificationStatus &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.blocked == resource.data.blocked
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // HRIS Users Collection (Alias / Mirror)
+    match /hris_users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // Employees Collection (Protected - Approved Only)
+    match /employees/{employeeId} {
+      allow read: if isApproved();
+      allow write: if isAdmin();
+    }
+
+    // Requirements Catalog Collection
+    match /requirements/{reqId} {
+      allow read: if isApproved();
+      allow write: if isAdmin();
+    }
+
+    // Custom Events Collection
+    match /custom_events/{eventId} {
+      allow read: if isApproved();
+      allow write: if isAdmin();
+    }
+
+    // File Blobs Cloud Collection
+    match /file_blobs/{fileId} {
+      allow read, write: if isApproved();
+
+      match /chunks/{chunkId} {
+        allow read, write: if isApproved();
+      }
+    }
+
+    // Realtime Presence Collection
+    match /presence/{userId} {
+      allow read, write: if isApproved();
     }
   }
 }

@@ -114,15 +114,15 @@ export const PublicVerificationView: React.FC<PublicVerificationViewProps> = ({
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
             {/* Search Bar */}
-            <form onSubmit={handleSearchSubmit} className="relative flex-1 sm:w-64">
+            <form onSubmit={handleSearchSubmit} className="relative flex-1 sm:w-64 min-w-[180px]">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Enter Employee ID..."
                 value={searchWord}
                 onChange={(e) => setSearchWord(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-xl pl-9 pr-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-xl pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             </form>
 
             {onGoToLogin && (

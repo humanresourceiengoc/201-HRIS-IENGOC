@@ -67,17 +67,25 @@
     visibility: visible !important;
   }
 
-  /* ID Card print badge modal */
-  .print-id-card-modal {
-    display: flex !important;
-    visibility: visible !important;
-    position: static !important;
-    width: 100% !important;
-    height: auto !important;
-    background: #ffffff !important;
-    padding: 10px !important;
-    justify-content: center !important;
-    align-items: flex-start !important;
+  /* Prevent awkward page breaks inside signatures, cards, tables, and section blocks */
+  .break-inside-avoid,
+  .avoid-page-break,
+  .print-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Force page breaks cleanly where needed */
+  .page-break-before {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  /* Clean print section margins */
+  .print-document-sheet section,
+  .print-document-sheet > div {
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 }
 

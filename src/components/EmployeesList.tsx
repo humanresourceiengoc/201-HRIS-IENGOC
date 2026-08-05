@@ -119,8 +119,8 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
     <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
       {/* Toolbar */}
       <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between bg-slate-50/50">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+        <div className="relative flex-1 min-w-[220px] max-w-md">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={searchTerm}

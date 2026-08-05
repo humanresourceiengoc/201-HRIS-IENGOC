@@ -8,6 +8,7 @@ export interface UserAccount {
   email: string;
   role: UserRole;
   category?: string;
+  approved?: boolean;
   verificationStatus?: 'pending' | 'approved' | 'rejected';
   blocked?: boolean;
   company: CompanyKey;

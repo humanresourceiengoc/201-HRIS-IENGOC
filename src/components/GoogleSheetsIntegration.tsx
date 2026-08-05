@@ -86,25 +86,6 @@ export const GoogleSheetsIntegration: React.FC<GoogleSheetsIntegrationProps> = (
     return () => window.removeEventListener('gsheets_sync_status_changed', handleStatusChange);
   }, [company]);
 
-  useEffect(() => {
-    let unsubscribe = () => {};
-    try {
-      if (auth) {
-        unsubscribe = onAuthStateChanged(
-          auth,
-          (user) => {
-            setCurrentUser(user);
-          },
-          (err) => {
-            // Silently absorb internal identitytoolkit 401 checks for unauthenticated state
-          }
-        );
-      }
-    } catch (e) {
-      // Ignore
-    }
-    return () => unsubscribe();
-  }, []);
 
   const saveHistory = (item: ExportHistoryItem) => {
     const updated = [item, ...exportHistory.filter(h => h.id !== item.id).slice(0, 4)];

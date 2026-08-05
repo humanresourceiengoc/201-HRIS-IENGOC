@@ -87,9 +87,22 @@ export const GoogleSheetsIntegration: React.FC<GoogleSheetsIntegrationProps> = (
   }, [company]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-    });
+    let unsubscribe = () => {};
+    try {
+      if (auth) {
+        unsubscribe = onAuthStateChanged(
+          auth,
+          (user) => {
+            setCurrentUser(user);
+          },
+          (err) => {
+            // Silently absorb internal identitytoolkit 401 checks for unauthenticated state
+          }
+        );
+      }
+    } catch (e) {
+      // Ignore
+    }
     return () => unsubscribe();
   }, []);
 
@@ -129,12 +142,21 @@ export const GoogleSheetsIntegration: React.FC<GoogleSheetsIntegrationProps> = (
         onToast(`Automatically created & synced ${result.rowsCount} records to Google Sheets!`, 'success');
       }
     } catch (err: any) {
-      console.error('Google Sign-In failed:', err);
-      if (err.message?.includes('ORIGIN_MISMATCH') || err.message?.includes('origin')) {
-        setOriginError(err.message);
+      console.info('Google Sign-In popup notice:', err.message || err);
+      const isPopupOrOriginIssue = 
+        err.message?.includes('ORIGIN_MISMATCH') || 
+        err.message?.includes('origin') || 
+        err.message?.includes('popup') || 
+        err.message?.includes('closed') || 
+        err.message?.includes('blocked') ||
+        err.message?.includes('auth/');
+
+      if (isPopupOrOriginIssue) {
+        setOriginError(err.message || 'Google OAuth popup was closed or blocked by browser.');
         setShowScriptModal(true);
+        onToast('Google OAuth popup was blocked or requires domain setup. Opened 1-Click Apps Script setup below!', 'info');
       } else {
-        onToast(err.message || 'Google Authentication failed. Please try again.', 'error');
+        onToast(err.message || 'Google Authentication failed. Please try the Apps Script Web App method below.', 'error');
       }
     } finally {
       setIsAuthenticating(false);

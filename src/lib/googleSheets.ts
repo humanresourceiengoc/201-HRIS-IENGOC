@@ -152,7 +152,7 @@ export const signInWithGoogleForSheets = async (): Promise<string> => {
     if (gsiErr.message?.includes('ORIGIN_MISMATCH')) {
       throw gsiErr;
     }
-    console.warn('Google Identity Services attempt failed, trying Firebase Auth fallback:', gsiErr);
+    console.info('GIS OAuth notice:', gsiErr?.message || gsiErr);
   }
 
   // 2. Fallback to Firebase Auth signInWithPopup
@@ -176,7 +176,7 @@ export const signInWithGoogleForSheets = async (): Promise<string> => {
     cachedAccessToken = credential.accessToken;
     return cachedAccessToken;
   } catch (fbErr: any) {
-    console.warn('Firebase Auth sign-in failed:', fbErr);
+    console.info('Firebase Auth notice:', fbErr?.message || fbErr);
     if (fbErr.code === 'auth/popup-blocked') {
       throw new Error('ORIGIN_MISMATCH: Google Sign-in popup was blocked by your browser. Please allow popups or use the 1-Click Apps Script Setup below!');
     }
@@ -512,7 +512,7 @@ export const triggerAutoGoogleSheetsSync = (
           console.log(`⚡ Auto-synced ${res.rowsCount} employees via Google Apps Script!`);
         })
         .catch((err) => {
-          console.warn('Auto Apps Script sync error:', err);
+          console.info('Auto Apps Script sync notice:', err?.message || err);
         });
     } else if (token) {
       exportEmployeesToGoogleSheets(company, companyName, employees, token, false)
@@ -520,7 +520,7 @@ export const triggerAutoGoogleSheetsSync = (
           console.log(`⚡ Auto-synced ${res.rowsCount} employees to Google Sheets!`);
         })
         .catch((err) => {
-          console.warn('Auto Google Sheets sync background warning:', err);
+          console.info('Auto Google Sheets sync notice:', err?.message || err);
         });
     }
   }, 1500);

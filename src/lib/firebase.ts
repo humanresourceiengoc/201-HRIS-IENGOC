@@ -1,6 +1,5 @@
 import { initializeApp, getApps, getApp, setLogLevel } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import { getAuth, Auth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -15,22 +14,14 @@ const config = {
 const app = getApps().length === 0 ? initializeApp(config) : getApp();
 export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId || undefined);
 
-let lazyAuth: Auth | null = null;
-export const getFirebaseAuth = (): Auth => {
+let lazyAuth: any = null;
+export const getFirebaseAuth = async () => {
   if (!lazyAuth) {
+    const { getAuth } = await import('firebase/auth');
     lazyAuth = getAuth(app);
   }
   return lazyAuth;
 };
-
-// Lazy proxy for auth so getAuth(app) is never called at module load time
-export const auth: Auth = new Proxy({} as Auth, {
-  get(_target, prop) {
-    const instance = getFirebaseAuth();
-    const value = (instance as any)[prop];
-    return typeof value === 'function' ? value.bind(instance) : value;
-  }
-});
 
 export const rtdb = getDatabase(app);
 export default app;

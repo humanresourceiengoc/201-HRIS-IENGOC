@@ -18,8 +18,6 @@ import {
 } from '../lib/googleSheets';
 import { saveEmployee } from '../lib/db';
 import { FileSpreadsheet, ExternalLink, RefreshCw, Upload, CheckCircle2, AlertCircle, LogOut, Zap, Code, Copy, Check, Link } from 'lucide-react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '../lib/firebase';
 
 interface GoogleSheetsIntegrationProps {
   company: CompanyKey;
@@ -46,7 +44,7 @@ export const GoogleSheetsIntegration: React.FC<GoogleSheetsIntegrationProps> = (
   onRefreshData,
   onToast
 }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ email?: string } | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(getGoogleAccessToken());
   const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);

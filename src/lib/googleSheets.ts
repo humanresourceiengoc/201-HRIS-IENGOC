@@ -1,5 +1,3 @@
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth } from './firebase';
 import { Employee, CompanyKey } from '../types';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -159,12 +157,16 @@ export const signInWithGoogleForSheets = async (): Promise<string> => {
 
   // 2. Fallback to Firebase Auth signInWithPopup
   try {
+    const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
+    const { getFirebaseAuth } = await import('./firebase');
+    const firebaseAuth = await getFirebaseAuth();
+
     const provider = new GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/spreadsheets');
     provider.addScope('https://www.googleapis.com/auth/drive.file');
     provider.addScope('https://www.googleapis.com/auth/drive.readonly');
 
-    const result = await signInWithPopup(auth, provider);
+    const result = await signInWithPopup(firebaseAuth, provider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
     
     if (!credential?.accessToken) {

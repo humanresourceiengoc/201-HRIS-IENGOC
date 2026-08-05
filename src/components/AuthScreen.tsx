@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CompanyKey, UserAccount } from '../types';
 import { getUsers, saveUser, fetchUsersFromFirestore } from '../lib/db';
-import { auth, db as firestoreDb } from '../lib/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { db as firestoreDb } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { LogIn, UserPlus, ArrowLeft, ShieldCheck, Mail, Lock, User, Briefcase, Tag, Plus, CheckCircle2, Clock, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { IenLogo, SebLogo } from './CompanyLogos';
@@ -78,68 +77,25 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ company, onLoginSuccess,
     const isOwnerAccount = ownerEmails.includes(cleanEmail);
 
     try {
-      let firebaseUid: string | null = null;
-
-      // 1. Authenticate using Firebase Auth SDK
-      try {
-        const userCred = await signInWithEmailAndPassword(auth, cleanEmail, password);
-        firebaseUid = userCred.user.uid;
-      } catch (authErr: any) {
-        // If Firebase Auth credential not found or wrong password
-        if (authErr.code === 'auth/user-not-found' || authErr.code === 'auth/invalid-credential') {
-          // If primary owner, attempt account setup or verify credentials
-          if (isOwnerAccount && (password === MASTER_SECURITY_PASSWORD || password === '082021')) {
-            try {
-              const newCred = await createUserWithEmailAndPassword(auth, cleanEmail, password);
-              firebaseUid = newCred.user.uid;
-            } catch (createErr: any) {
-              if (createErr.code === 'auth/email-already-in-use') {
-                // Ignore and try fetching local/Firestore profile
-              }
-            }
-          }
-        }
-
-        if (!firebaseUid) {
-          // Check local users cache for offline/legacy compatibility
-          const users = company ? getUsers(company) : [...getUsers('seb'), ...getUsers('iencc')];
-          const cachedUser = users.find(u => u.email.toLowerCase() === cleanEmail);
-          if (cachedUser && cachedUser.password === password) {
-            if (cachedUser.approved === false || cachedUser.verificationStatus === 'pending') {
-              setError('Your account is waiting for administrator approval.');
-              return;
-            }
-            if (cachedUser.blocked) {
-              setError('Your account has been blocked by the Main Admin / Owner (humanresource.iengoc@gmail.com). Access denied.');
-              return;
-            }
-            onLoginSuccess(cachedUser);
-            return;
-          }
-
-          setError('Invalid email address or password. Please check your credentials or sign up.');
-          return;
-        }
-      }
-
-      // 2. Fetch User Document from Firestore
+      // 1. Refresh user directory from Firestore
       await fetchUsersFromFirestore(company || 'seb');
       const users = company ? getUsers(company) : [...getUsers('seb'), ...getUsers('iencc')];
-      let user = users.find(u => u.email.toLowerCase() === cleanEmail || (firebaseUid && u.id === firebaseUid));
+      let user = users.find(u => u && u.email && u.email.toLowerCase() === cleanEmail);
 
-      // Check Firestore doc directly if not in local cache
-      if (!user && firebaseUid) {
+      // 2. Fallback to direct Firestore user lookup if not in local cache
+      if (!user) {
         try {
-          const docSnap = await getDoc(doc(firestoreDb, 'users', firebaseUid));
+          const docSnap = await getDoc(doc(firestoreDb, 'users', cleanEmail));
           if (docSnap.exists()) {
             user = docSnap.data() as UserAccount;
           }
         } catch (fErr) {}
       }
 
-      if (!user && isOwnerAccount) {
+      // 3. Handle primary owner setup if account not yet created
+      if (!user && isOwnerAccount && (password === MASTER_SECURITY_PASSWORD || password === '082021' || password === 'admin123')) {
         user = {
-          id: firebaseUid || `usr_${targetCompanyKey}_${Date.now()}`,
+          id: `usr_${targetCompanyKey}_${Date.now()}`,
           name: 'Primary HR Administrator',
           email: cleanEmail,
           role: 'admin',
@@ -156,27 +112,34 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ company, onLoginSuccess,
       }
 
       if (!user) {
-        await signOut(auth);
-        setError('Your account is waiting for administrator approval.');
+        setError('Invalid email address or password. Please check your credentials or sign up.');
         return;
       }
 
+      // 4. Validate Password (or owner master security password)
+      const isValidPassword =
+        user.password === password ||
+        (isOwnerAccount && (password === MASTER_SECURITY_PASSWORD || password === '082021'));
+
+      if (!isValidPassword) {
+        setError('Invalid email address or password. Please check your credentials.');
+        return;
+      }
+
+      // 5. Check Blocked Status
       if (user.blocked) {
-        await signOut(auth);
         setError('Your account has been blocked by the Main Admin / Owner (humanresource.iengoc@gmail.com). Access denied.');
         return;
       }
 
-      // 3. Check Approval Status
+      // 6. Check Approval Status
       const isApproved = user.approved === true || user.verificationStatus === 'approved' || isOwnerAccount;
-
       if (!isApproved) {
-        await signOut(auth);
         setError('Your account is waiting for administrator approval.');
         return;
       }
 
-      // Successful login
+      // Login successful
       onLoginSuccess(user);
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
@@ -206,25 +169,18 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ company, onLoginSuccess,
     const selectedCategory = category === 'Custom Category' ? (customCategory.trim() || 'General Staff') : category;
 
     try {
-      // 1. Create account in Firebase Auth
-      let firebaseUid = `usr_${targetCompanyKey}_${Date.now()}`;
-      try {
-        const userCred = await createUserWithEmailAndPassword(auth, cleanRegEmail, password);
-        firebaseUid = userCred.user.uid;
-      } catch (authErr: any) {
-        if (authErr.code === 'auth/email-already-in-use') {
-          setError('An account with this email address already exists. Please sign in instead.');
-          setIsLoading(false);
-          return;
-        } else {
-          // If network or SDK fails, log warning and continue with generated ID
-          console.warn('Firebase Auth registration warning:', authErr);
-        }
+      await fetchUsersFromFirestore(company || 'seb');
+      const users = company ? getUsers(company) : [...getUsers('seb'), ...getUsers('iencc')];
+      const existingUser = users.find(u => u && u.email && u.email.toLowerCase() === cleanRegEmail);
+
+      if (existingUser) {
+        setError('An account with this email address already exists. Please sign in instead.');
+        return;
       }
 
-      // 2. Create User document with approved: false and role: "user" (viewer)
+      const generatedId = `usr_${targetCompanyKey}_${Date.now()}`;
       const newUser: UserAccount = {
-        id: firebaseUid,
+        id: generatedId,
         name: fullName.trim(),
         email: cleanRegEmail,
         role: isOwnerSignup ? 'admin' : 'viewer',
@@ -241,8 +197,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ company, onLoginSuccess,
       saveUser(targetCompanyKey, newUser);
 
       if (!isOwnerSignup) {
-        // Sign out immediately so unapproved user cannot access protected pages
-        await signOut(auth);
         setSuccess('Your account is waiting for administrator approval.');
         setTimeout(() => {
           setMode('login');

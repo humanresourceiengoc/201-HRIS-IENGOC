@@ -36,6 +36,84 @@ const loadGsiScript = (): Promise<void> => {
   });
 };
 
+export const getAppsScriptUrl = (company: CompanyKey): string | null => {
+  try {
+    return localStorage.getItem(`gsheets_webapp_url_${company}`);
+  } catch (e) {
+    return null;
+  }
+};
+
+export const setAppsScriptUrl = (company: CompanyKey, url: string | null): void => {
+  try {
+    if (url) {
+      localStorage.setItem(`gsheets_webapp_url_${company}`, url.trim());
+    } else {
+      localStorage.removeItem(`gsheets_webapp_url_${company}`);
+    }
+    window.dispatchEvent(new CustomEvent('gsheets_sync_status_changed', { detail: { company } }));
+  } catch (e) {}
+};
+
+export const syncViaAppsScript = async (
+  company: CompanyKey,
+  companyName: string,
+  employees: Employee[],
+  scriptUrl: string
+): Promise<ExportToSheetResult> => {
+  const cleanUrl = scriptUrl.trim();
+  if (!cleanUrl.startsWith('http')) {
+    throw new Error('Invalid Google Apps Script Web App URL. Must start with https://');
+  }
+
+  const payload = {
+    company,
+    companyName,
+    syncedAt: new Date().toISOString(),
+    employees: employees.map(emp => ({
+      id: emp.empId || emp.id,
+      firstName: emp.firstName,
+      lastName: emp.lastName,
+      middleName: emp.middleName || '',
+      fullName: `${emp.firstName} ${emp.middleName ? emp.middleName + ' ' : ''}${emp.lastName}`,
+      company: emp.company || companyName,
+      position: emp.position || '',
+      department: emp.department || '',
+      status: emp.status || 'ACTIVE',
+      basicSalary: emp.monthlySalary || 0,
+      sssNo: emp.sss || '',
+      philHealthNo: emp.philhealth || '',
+      pagIbigNo: emp.pagibig || '',
+      tinNo: emp.tin || '',
+      contactNo: emp.mobileNumber || '',
+      email: emp.companyEmail || emp.personalEmail || '',
+      address: emp.currentAddress || ''
+    }))
+  };
+
+  try {
+    await fetch(cleanUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+    });
+
+    const savedInfo = saveLinkedGoogleSheet(company, 'apps_script_linked', cleanUrl);
+    setAppsScriptUrl(company, cleanUrl);
+
+    return {
+      spreadsheetId: 'apps_script_linked',
+      spreadsheetUrl: cleanUrl,
+      rowsCount: employees.length,
+      lastSyncedAt: savedInfo.lastSyncedAt,
+      isExisting: true
+    };
+  } catch (err: any) {
+    throw new Error(`Failed to send data to Google Apps Script: ${err.message}`);
+  }
+};
+
 export const signInWithGoogleForSheets = async (): Promise<string> => {
   const clientId = (firebaseConfig as any).oAuthClientId || '582123280265-34dbb55glui7el5rd7prbtp5u6ci00us.apps.googleusercontent.com';
 
@@ -49,7 +127,11 @@ export const signInWithGoogleForSheets = async (): Promise<string> => {
           scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',
           callback: (response: any) => {
             if (response.error) {
-              reject(new Error(response.error_description || response.error));
+              if (response.error === 'origin_mismatch' || response.error_description?.includes('origin')) {
+                reject(new Error('ORIGIN_MISMATCH: The origin domain is not registered in Google OAuth origins. You can use the Apps Script Web App method below for 100% instant sync!'));
+              } else {
+                reject(new Error(response.error_description || response.error));
+              }
             } else if (response.access_token) {
               resolve(response.access_token);
             } else {
@@ -68,7 +150,10 @@ export const signInWithGoogleForSheets = async (): Promise<string> => {
         return token;
       }
     }
-  } catch (gsiErr) {
+  } catch (gsiErr: any) {
+    if (gsiErr.message?.includes('ORIGIN_MISMATCH')) {
+      throw gsiErr;
+    }
     console.warn('Google Identity Services attempt failed, trying Firebase Auth fallback:', gsiErr);
   }
 
@@ -89,8 +174,17 @@ export const signInWithGoogleForSheets = async (): Promise<string> => {
     cachedAccessToken = credential.accessToken;
     return cachedAccessToken;
   } catch (fbErr: any) {
-    console.error('Firebase Auth sign-in failed:', fbErr);
-    throw new Error(fbErr.message || 'Google Sign-In failed. Please ensure popups are allowed or try reconnecting.');
+    console.warn('Firebase Auth sign-in failed:', fbErr);
+    if (fbErr.code === 'auth/popup-blocked') {
+      throw new Error('ORIGIN_MISMATCH: Google Sign-in popup was blocked by your browser. Please allow popups or use the 1-Click Apps Script Setup below!');
+    }
+    if (fbErr.code === 'auth/popup-closed-by-user' || fbErr.message?.includes('closed')) {
+      throw new Error('ORIGIN_MISMATCH: Google Sign-in popup was closed. Please use the 1-Click Apps Script Setup below for instant sync!');
+    }
+    if (fbErr.code === 'auth/internal-error' || fbErr.message?.includes('internal-error')) {
+      throw new Error('ORIGIN_MISMATCH: Google Sign-in requires domain authorization or Apps Script setup. Please use the Google Apps Script Web App setup below for 100% reliable direct sync!');
+    }
+    throw new Error(fbErr.message || 'Google Sign-In failed. Please try the Apps Script Web App method below.');
   }
 };
 
@@ -404,18 +498,29 @@ export const triggerAutoGoogleSheetsSync = (
   employees: Employee[]
 ) => {
   if (!isAutoSyncEnabled(company)) return;
+
+  const scriptUrl = getAppsScriptUrl(company);
   const token = getGoogleAccessToken();
-  if (!token) return; // Will sync automatically once connected
 
   if (autoSyncDebounceTimer) clearTimeout(autoSyncDebounceTimer);
   autoSyncDebounceTimer = setTimeout(() => {
-    exportEmployeesToGoogleSheets(company, companyName, employees, token, false)
-      .then((res) => {
-        console.log(`⚡ Auto-synced ${res.rowsCount} employees to Google Sheets!`);
-      })
-      .catch((err) => {
-        console.warn('Auto Google Sheets sync background warning:', err);
-      });
+    if (scriptUrl) {
+      syncViaAppsScript(company, companyName, employees, scriptUrl)
+        .then((res) => {
+          console.log(`⚡ Auto-synced ${res.rowsCount} employees via Google Apps Script!`);
+        })
+        .catch((err) => {
+          console.warn('Auto Apps Script sync error:', err);
+        });
+    } else if (token) {
+      exportEmployeesToGoogleSheets(company, companyName, employees, token, false)
+        .then((res) => {
+          console.log(`⚡ Auto-synced ${res.rowsCount} employees to Google Sheets!`);
+        })
+        .catch((err) => {
+          console.warn('Auto Google Sheets sync background warning:', err);
+        });
+    }
   }, 1500);
 };
 

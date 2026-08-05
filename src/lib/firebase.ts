@@ -1,8 +1,11 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
+import { initializeApp, getApps, getApp, setLogLevel } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 import firebaseConfig from '../../firebase-applet-config.json';
+
+// Reduce noisy internal warnings in console for non-critical fallback states
+setLogLevel('error');
 
 const config = {
   ...firebaseConfig,

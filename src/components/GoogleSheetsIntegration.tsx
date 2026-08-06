@@ -380,7 +380,7 @@ export const GoogleSheetsIntegration: React.FC<GoogleSheetsIntegrationProps> = (
 
   return (
     <div className="bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-xl space-y-5">
-      {/* Top Header & Connection Options */}
+      {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
@@ -388,187 +388,176 @@ export const GoogleSheetsIntegration: React.FC<GoogleSheetsIntegrationProps> = (
           </div>
           <div>
             <h3 className="font-extrabold text-base text-white flex items-center gap-2">
-              Google Sheets Real-Time Sync
+              Google Sheets Integration
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wide flex items-center gap-1">
-                <Zap className="w-3 h-3 text-emerald-400 animate-pulse" /> Automatic Sync
+                <Zap className="w-3 h-3 text-emerald-400 animate-pulse" /> Real-Time Auto-Sync
               </span>
             </h3>
             <p className="text-xs text-slate-400">
-              No manual export needed! Any employee updates in HRIS immediately sync to your Google Sheet in real-time.
+              Sync employee records directly with Google Sheets. Updates in HRIS instantly push to your spreadsheet.
             </p>
           </div>
         </div>
 
-        {/* Account Status / Connect Options */}
-        <div className="flex items-center gap-2">
-          {activeScriptUrl ? (
-            <div className="flex items-center gap-2 bg-emerald-950/60 px-3 py-1.5 rounded-xl border border-emerald-500/40 text-xs text-emerald-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span className="font-bold">Apps Script Web App Connected</span>
-              <button
-                onClick={() => {
-                  setAppsScriptUrl(company, null);
-                  setActiveScriptUrl(null);
-                  onToast('Disconnected Google Apps Script Web App.', 'info');
-                }}
-                className="text-slate-400 hover:text-rose-400 transition-colors ml-1"
-                title="Disconnect Web App"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ) : accessToken ? (
-            <div className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 text-xs text-slate-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span className="font-medium truncate max-w-[150px]">
-                {currentUser?.email || 'Google Drive Connected'}
-              </span>
-              <button
-                onClick={() => {
-                  setAccessToken(null);
-                  setGoogleAccessToken(null);
-                  onToast('Disconnected Google Account.', 'info');
-                }}
-                className="text-slate-400 hover:text-rose-400 transition-colors ml-1"
-                title="Disconnect Google Account"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowScriptModal(true)}
-                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
-              >
-                <Code className="w-4 h-4" /> 1-Click Apps Script Setup
-              </button>
-              <button
-                onClick={handleConnectGoogle}
-                disabled={isAuthenticating}
-                className="gsi-material-button text-xs font-bold px-3 py-1.5 bg-white text-slate-800 hover:bg-slate-100 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 48 48">
-                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
-                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
-                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
-                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
-                </svg>
-                <span>{isAuthenticating ? 'Connecting...' : 'Connect OAuth'}</span>
-              </button>
-            </div>
-          )}
+        {/* Quick Sync Toggle & Manual Trigger */}
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-200 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
+            <span>Auto-Sync</span>
+            <input
+              type="checkbox"
+              checked={autoSyncOn}
+              onChange={handleToggleAutoSync}
+              className="sr-only peer"
+            />
+            <div className="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+          </label>
+
+          <button
+            onClick={() => handleManualSyncNow(false)}
+            disabled={isSyncing}
+            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span>{isSyncing ? 'Syncing...' : 'Sync Now'}</span>
+          </button>
         </div>
       </div>
 
-      {/* Automatic Sync Banner & Live Sheet Control */}
-      <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-4 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className={`w-3 h-3 rounded-full ${isSyncActive ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`}></span>
+      {/* Active Linked Sheet Header Banner if Connected */}
+      {(linkedSheet || isSyncActive) && (
+        <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5 text-emerald-200">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
             <div>
-              <div className="text-sm font-extrabold text-emerald-300 flex items-center gap-2">
-                {isSyncActive ? 'Automatic Real-Time Sync: ACTIVE' : 'Automatic Real-Time Sync Ready'}
+              <div className="font-extrabold text-white text-sm flex items-center gap-2">
+                Google Sheet Connected & Ready
               </div>
-              <p className="text-xs text-slate-300">
-                {isSyncActive
-                  ? 'All changes in HRIS (Adding, Editing, Deleting employees) automatically update your linked Google Sheet in real-time.'
-                  : 'Link your Google Sheet via Google Apps Script or Google Drive to activate continuous background sync.'}
+              <p className="text-slate-300 text-xs">
+                {companyName} Masterlist • {employees.length} employees loaded
+                {linkedSheet?.lastSyncedAt && ` • Last updated: ${linkedSheet.lastSyncedAt}`}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-200">
-              <span>Auto-Sync</span>
-              <input
-                type="checkbox"
-                checked={autoSyncOn}
-                onChange={handleToggleAutoSync}
-                className="sr-only peer"
-              />
-              <div className="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
-            </label>
+          <div className="flex items-center gap-2">
+            {linkedSheet?.spreadsheetUrl?.startsWith('http') && (
+              <a
+                href={linkedSheet.spreadsheetUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="px-3 py-1.5 bg-emerald-500 text-slate-950 font-extrabold hover:bg-emerald-400 rounded-lg flex items-center gap-1.5 text-xs transition-all shadow-sm"
+              >
+                Open Google Sheet <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            )}
 
             <button
-              onClick={() => handleManualSyncNow(false)}
-              disabled={isSyncing}
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md cursor-pointer disabled:opacity-50"
+              onClick={() => {
+                setAccessToken(null);
+                setGoogleAccessToken(null);
+                setAppsScriptUrl(company, null);
+                setActiveScriptUrl(null);
+                unlinkGoogleSheet(company);
+                setLinkedSheet(null);
+                onToast('Disconnected Google Sheet sync.', 'info');
+              }}
+              className="px-2.5 py-1.5 text-slate-400 hover:text-rose-400 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>{isSyncing ? 'Syncing...' : 'Sync Now'}</span>
+              <LogOut className="w-3.5 h-3.5" /> Disconnect
             </button>
           </div>
         </div>
+      )}
 
-        {/* Display Linked Sheet Info if available */}
-        {linkedSheet && (
-          <div className="pt-2 border-t border-emerald-500/20 flex flex-wrap items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-2 text-emerald-200">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Linked Google Sheet: <strong>{companyName} Masterlist</strong> ({employees.length} records)</span>
-              {linkedSheet.lastSyncedAt && (
-                <span className="text-[11px] text-slate-400">
-                  • Last synced at {linkedSheet.lastSyncedAt}
+      {/* Easy Connection Methods Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Method 1: Google OAuth Sign-In */}
+        <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700/80 flex flex-col justify-between space-y-3">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
+                Option 1: Direct Google Account
+              </span>
+              {accessToken && (
+                <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Connected
                 </span>
               )}
             </div>
+            <h4 className="font-bold text-sm text-white">Connect with Google Account</h4>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Sign in with your Google account to automatically create and sync a master spreadsheet in your Google Drive.
+            </p>
+          </div>
 
-            <div className="flex items-center gap-2">
-              {linkedSheet.spreadsheetUrl.startsWith('http') && (
-                <a
-                  href={linkedSheet.spreadsheetUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3 py-1 bg-emerald-500 text-slate-950 font-extrabold hover:bg-emerald-400 rounded-lg flex items-center gap-1 text-xs transition-colors"
-                >
-                  Open Google Sheet <ExternalLink className="w-3.5 h-3.5" />
-                </a>
+          <button
+            onClick={handleConnectGoogle}
+            disabled={isAuthenticating}
+            className="w-full py-2.5 bg-white hover:bg-slate-100 text-slate-900 font-extrabold rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 48 48">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+            </svg>
+            <span>{isAuthenticating ? 'Connecting to Google...' : '1-Click Google OAuth Connect'}</span>
+          </button>
+        </div>
+
+        {/* Method 2: Google Apps Script Web App Link */}
+        <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700/80 flex flex-col justify-between space-y-3">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                Option 2: 100% Guaranteed Web App
+              </span>
+              {activeScriptUrl && (
+                <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Active Link
+                </span>
               )}
-
-              <button
-                onClick={() => handleManualSyncNow(true)}
-                className="text-[11px] text-slate-400 hover:text-white underline cursor-pointer"
-                title="Create a new fresh Google Sheet instead of updating existing"
-              >
-                Re-Create Sheet
-              </button>
             </div>
+            <h4 className="font-bold text-sm text-white">Google Sheet Web App Setup</h4>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Link any Google Sheet directly using Google Apps Script. 100% reliable without browser popup restrictions.
+            </p>
           </div>
-        )}
-      </div>
 
-      {/* Google Apps Script Web App Connection Form */}
-      <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-700/60 space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-blue-400 font-bold text-sm">
-            <Link className="w-4 h-4" />
-            <span>Direct Google Sheet Web App Link (Recommended - 100% Reliable)</span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowScriptModal(true)}
+              className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+            >
+              <Code className="w-4 h-4" /> 1-Click Apps Script Guide
+            </button>
           </div>
-          <button
-            onClick={() => setShowScriptModal(true)}
-            className="text-xs text-blue-300 hover:underline flex items-center gap-1 font-bold"
-          >
-            <Code className="w-3.5 h-3.5" /> View Setup Instructions
-          </button>
-        </div>
-
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Paste your Google Apps Script Web App URL (https://script.google.com/macros/s/.../exec)"
-            value={appsScriptUrlInput}
-            onChange={(e) => setAppsScriptUrlInput(e.target.value)}
-            className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 font-mono"
-          />
-          <button
-            onClick={handleSaveAppsScriptUrl}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-md"
-          >
-            Save & Connect
-          </button>
         </div>
       </div>
+
+      {/* Web App URL Link Bar */}
+      <div className="bg-slate-800/50 p-3.5 rounded-xl border border-slate-700/60 flex flex-wrap items-center gap-2">
+        <Link className="w-4 h-4 text-emerald-400 shrink-0" />
+        <span className="text-xs font-bold text-slate-300 shrink-0">Web App URL:</span>
+        <input
+          type="text"
+          placeholder="Paste Google Apps Script Web App URL (https://script.google.com/macros/s/.../exec)"
+          value={appsScriptUrlInput}
+          onChange={(e) => setAppsScriptUrlInput(e.target.value)}
+          className="flex-1 min-w-[200px] px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
+        />
+        <button
+          onClick={handleSaveAppsScriptUrl}
+          className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm"
+        >
+          Save & Connect
+        </button>
+      </div>
+
+
 
       {/* Modal / Setup Drawer for Google Apps Script Web App */}
       {showScriptModal && (

@@ -1,10 +1,11 @@
 import React from 'react';
 import { UserRole } from '../types';
-import { UserPlus, FileText, Shield, Eye, CheckCircle2, FileSpreadsheet, Cloud, Zap } from 'lucide-react';
+import { UserPlus, FileText, Shield, Eye, CheckCircle2, FileSpreadsheet, Cloud, Zap, Mail } from 'lucide-react';
 
 interface TopbarProps {
   pageTitle: string;
   userRole: UserRole;
+  userEmail?: string;
   onOpenAddModal: () => void;
   onOpenBlankForm?: () => void;
   onOpenGoogleSheetModal?: () => void;
@@ -14,6 +15,7 @@ interface TopbarProps {
 export const Topbar: React.FC<TopbarProps> = ({
   pageTitle,
   userRole,
+  userEmail,
   onOpenAddModal,
   onOpenBlankForm,
   onOpenGoogleSheetModal,
@@ -40,6 +42,17 @@ export const Topbar: React.FC<TopbarProps> = ({
             <Eye className="w-3.5 h-3.5 text-emerald-600" />
             VIEWER MODE (Read Only)
           </span>
+        )}
+
+        {/* User Account / Gmail Badge */}
+        {userEmail && (
+          <div
+            className="px-2.5 py-1 bg-slate-100 text-slate-700 text-[11px] font-bold rounded-full border border-slate-200 flex items-center gap-1.5 shadow-2xs"
+            title={`Logged in as ${userEmail}`}
+          >
+            <Mail className="w-3.5 h-3.5 text-rose-500" />
+            <span className="font-mono">{userEmail}</span>
+          </div>
         )}
 
         {/* Permanent Firestore Cloud Database Indicator */}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { CompanyKey, UserAccount } from '../types';
-import { LayoutDashboard, Users, FileSpreadsheet, UserCog, LogOut, ArrowLeftRight, Calendar, FolderTree, Clock, Landmark } from 'lucide-react';
+import { LayoutDashboard, Users, FileSpreadsheet, UserCog, LogOut, ArrowLeftRight, Calendar, FolderTree, Clock, Landmark, Mail } from 'lucide-react';
 import { IenLogo, SebLogo } from './CompanyLogos';
 
 interface SidebarProps {
@@ -99,7 +99,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold text-slate-900 truncate">{currentUser.name}</p>
-              <div className="flex items-center gap-1 mt-0.5">
+              {currentUser.email && (
+                <p className="text-[10px] text-slate-500 font-mono truncate flex items-center gap-1 mt-0.5" title={currentUser.email}>
+                  <Mail className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                  <span className="truncate">{currentUser.email}</span>
+                </p>
+              )}
+              <div className="flex items-center gap-1 mt-1">
                 {currentUser.blocked ? (
                   <span className="text-[9px] px-1.5 py-0.5 bg-rose-100 text-rose-700 font-extrabold rounded-md uppercase tracking-wider">
                     Blocked

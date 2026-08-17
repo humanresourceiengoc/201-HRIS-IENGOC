@@ -475,6 +475,7 @@ export default function App() {
         <Topbar
           pageTitle={pageTitles[activeTab] || 'Employee 201 Database'}
           userRole={currentUser.role}
+          userEmail={currentUser.email}
           onOpenAddModal={handleOpenAddModal}
           onOpenBlankForm={() => setShowBlankFormModal(true)}
           onOpenGoogleSheetModal={() => setShowGoogleSheetModal(true)}

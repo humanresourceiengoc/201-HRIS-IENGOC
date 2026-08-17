@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { CompanyKey, DocumentRequirement, Employee, UserRole } from '../types';
 import { calculate201Completeness, getProbationaryStatus, checkDocumentExpiries, checkMissingGovIds } from '../lib/hrUtils';
-import { Search, Eye, Edit3, Trash2, Printer, FileCheck, CreditCard, Clock, AlertTriangle, ShieldAlert, ShieldCheck, QrCode, FileSpreadsheet } from 'lucide-react';
+import { Search, Eye, Edit3, Trash2, Printer, FileCheck, CreditCard, Clock, AlertTriangle, ShieldAlert, ShieldCheck, QrCode, FileSpreadsheet, Mail } from 'lucide-react';
 
 interface EmployeesListProps {
   company: CompanyKey;
@@ -279,6 +279,14 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
                           </span>
                         )}
                       </div>
+                      {(emp.personalEmail || emp.companyEmail || emp.email3) && (
+                        <span className="text-[11px] font-normal text-slate-500 flex items-center gap-1 font-mono">
+                          <Mail className="w-3 h-3 text-slate-400" />
+                          <span className="truncate max-w-[200px]" title={emp.personalEmail || emp.companyEmail || emp.email3}>
+                            {emp.personalEmail || emp.companyEmail || emp.email3}
+                          </span>
+                        </span>
+                      )}
                       {missingGov.length > 0 && (
                         <span className="text-[10px] font-extrabold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded border border-amber-300 w-fit" title={`Missing mandatory government IDs: ${missingGov.join(', ')}`}>
                           ⚠️ Missing {missingGov.join(', ')}

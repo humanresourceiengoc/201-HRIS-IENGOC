@@ -2035,35 +2035,37 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Company Email (Email 1)</label>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Company Email / Work Email (Email 1)</label>
                   <input
                     type="email"
                     readOnly={isReadOnly}
                     value={formData.companyEmail || ''}
                     onChange={(e) => handleChange('companyEmail', e.target.value)}
+                    placeholder="e.g. employee@company.com"
                     className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold read-only:bg-slate-50"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Personal Email (Email 2)</label>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Personal Email / Gmail (Email 2)</label>
                   <input
                     type="email"
                     readOnly={isReadOnly}
                     value={formData.personalEmail || ''}
                     onChange={(e) => handleChange('personalEmail', e.target.value)}
+                    placeholder="e.g. juan.delacruz@gmail.com"
                     className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold read-only:bg-slate-50"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Email 3 (Alternate)</label>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Email 3 (Alternate Email)</label>
                   <input
                     type="email"
                     readOnly={isReadOnly}
                     value={formData.email3 || ''}
                     onChange={(e) => handleChange('email3', e.target.value)}
-                    placeholder="Optional 3rd email address"
+                    placeholder="Optional 3rd alternate email"
                     className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold read-only:bg-slate-50"
                   />
                 </div>

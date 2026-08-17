@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { CompanyKey, DocumentRequirement, Employee, UserRole } from '../types';
 import { calculate201Completeness, getProbationaryStatus, checkDocumentExpiries, checkMissingGovIds } from '../lib/hrUtils';
-import { Search, Eye, Edit3, Trash2, Printer, FileCheck, CreditCard, Clock, AlertTriangle, ShieldAlert, ShieldCheck, QrCode } from 'lucide-react';
+import { Search, Eye, Edit3, Trash2, Printer, FileCheck, CreditCard, Clock, AlertTriangle, ShieldAlert, ShieldCheck, QrCode, FileSpreadsheet } from 'lucide-react';
 
 interface EmployeesListProps {
   company: CompanyKey;
@@ -13,6 +13,7 @@ interface EmployeesListProps {
   onDeleteEmployee: (id: string) => void;
   onPrintEmployee: (id: string) => void;
   onOpenIdCard?: (emp: Employee) => void;
+  onOpenGoogleSheets?: () => void;
 }
 
 export const EmployeesList: React.FC<EmployeesListProps> = ({
@@ -24,7 +25,8 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
   onEditEmployee,
   onDeleteEmployee,
   onPrintEmployee,
-  onOpenIdCard
+  onOpenIdCard,
+  onOpenGoogleSheets
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -205,6 +207,17 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
             <CreditCard className="w-3.5 h-3.5" />
             {missingGovFilter ? 'Showing Missing Gov IDs' : '⚠️ Missing Gov IDs'}
           </button>
+
+          {onOpenGoogleSheets && (
+            <button
+              onClick={onOpenGoogleSheets}
+              className="px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700 shadow-xs cursor-pointer"
+              title="Quick Google Sheet Sync & 23-Column Masterlist"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span>Google Sheet</span>
+            </button>
+          )}
         </div>
       </div>
 

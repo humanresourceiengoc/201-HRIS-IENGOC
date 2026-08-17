@@ -3,7 +3,6 @@ import { CompanyKey, DocumentRequirement, Employee } from '../types';
 import { DEFAULT_REQUIREMENTS } from '../lib/db';
 import { getProbationaryStatus, checkDocumentExpiries, calculate201Completeness, checkMissingGovIds } from '../lib/hrUtils';
 import { Users, UserCheck, Briefcase, TrendingUp, Calendar, AlertTriangle, UserX, User, Cake, Award, ChevronDown, ChevronUp, Clock, AlertCircle, FileCheck, DollarSign, CheckCircle2, CreditCard } from 'lucide-react';
-import { ImportExport } from './ImportExport';
 
 interface DashboardProps {
   company: CompanyKey;
@@ -213,16 +212,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Import / Export Section at Top of Dashboard */}
-      <ImportExport
-        company={company}
-        requirements={requirements}
-        employees={employees}
-        filteredEmployees={employees}
-        onRefreshData={onRefreshData}
-        onToast={onToast}
-      />
-
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">

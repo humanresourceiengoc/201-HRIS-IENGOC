@@ -138,6 +138,7 @@ export interface Employee {
   mobileNumber?: string;
   personalEmail?: string;
   companyEmail?: string;
+  email3?: string;
   currentAddress?: string;
   permanentAddress?: string;
 
@@ -185,6 +186,9 @@ export interface Employee {
   department?: string;
   division?: string; // Business Unit
   position?: string;
+  bioId?: string; // Biometric ID
+  newBioId?: string; // New Biometric ID
+  verifier?: string; // Verifier / HR Supervisor
   jobLevel?: string; // Grade
   employeeCategory?: 'Rank & File' | 'Supervisor' | 'Manager' | 'Executive' | string;
   immediateSupervisor?: string; // Reporting Line / Department Head

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CompanyKey, DocumentRequirement, Employee, UserRole } from '../types';
 import { saveEmployee } from '../lib/db';
-import { Upload, Download, CheckCircle, FileSpreadsheet } from 'lucide-react';
+import { Upload, Download, CheckCircle, FileSpreadsheet, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 import { GoogleSheetsIntegration } from './GoogleSheetsIntegration';
 
 interface ImportExportProps {
@@ -24,6 +24,7 @@ export const ImportExport: React.FC<ImportExportProps> = ({
   onToast,
   compact = false
 }) => {
+  const [showGoogleSheets, setShowGoogleSheets] = useState<boolean>(false);
   const [csvPreviewData, setCsvPreviewData] = useState<any[]>([]);
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
 
@@ -155,15 +156,47 @@ export const ImportExport: React.FC<ImportExportProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Google Sheets Live Integration Box */}
-      <GoogleSheetsIntegration
-        company={company}
-        companyName={companyFullName}
-        userRole={userRole}
-        employees={employees}
-        onRefreshData={onRefreshData}
-        onToast={onToast}
-      />
+      {/* Optional Google Sheets Live Integration Accordion */}
+      <div className="bg-slate-900/90 rounded-2xl border border-slate-800 overflow-hidden shadow-md">
+        <button
+          onClick={() => setShowGoogleSheets(!showGoogleSheets)}
+          className="w-full px-5 py-3.5 flex items-center justify-between text-left hover:bg-slate-800/80 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
+              <FileSpreadsheet className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm text-white">Google Sheets Integration</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                  <Zap className="w-2.5 h-2.5" /> 23 Columns Masterlist
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">
+                {showGoogleSheets ? 'Click to hide Google Sheets controls' : 'Click to show / configure Google Sheets sync & Webhooks'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold">
+            <span>{showGoogleSheets ? 'Hide' : 'Show / Expand'}</span>
+            {showGoogleSheets ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </div>
+        </button>
+
+        {showGoogleSheets && (
+          <div className="p-4 pt-0 border-t border-slate-800/80">
+            <GoogleSheetsIntegration
+              company={company}
+              companyName={companyFullName}
+              userRole={userRole}
+              employees={employees}
+              onRefreshData={onRefreshData}
+              onToast={onToast}
+            />
+          </div>
+        )}
+      </div>
 
       {/* CSV File Tools Box */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-3">

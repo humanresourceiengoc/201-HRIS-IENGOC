@@ -955,6 +955,42 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                   />
                 </div>
 
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Bio ID (Biometric)</label>
+                  <input
+                    type="text"
+                    readOnly={isReadOnly}
+                    value={formData.bioId || ''}
+                    onChange={(e) => handleChange('bioId', e.target.value)}
+                    placeholder="e.g. 1001, BIO-01"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold read-only:bg-slate-50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">New Bio ID</label>
+                  <input
+                    type="text"
+                    readOnly={isReadOnly}
+                    value={formData.newBioId || ''}
+                    onChange={(e) => handleChange('newBioId', e.target.value)}
+                    placeholder="e.g. NB-1001"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold read-only:bg-slate-50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Verifier / Supervisor</label>
+                  <input
+                    type="text"
+                    readOnly={isReadOnly}
+                    value={formData.verifier || ''}
+                    onChange={(e) => handleChange('verifier', e.target.value)}
+                    placeholder="e.g. HR Manager, Immediate Head"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold read-only:bg-slate-50"
+                  />
+                </div>
+
                 {/* Classic Hierarchy Level / Org Level */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Classic Hierarchy Level / Tier</label>
@@ -1999,7 +2035,18 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Personal Email</label>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Company Email (Email 1)</label>
+                  <input
+                    type="email"
+                    readOnly={isReadOnly}
+                    value={formData.companyEmail || ''}
+                    onChange={(e) => handleChange('companyEmail', e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold read-only:bg-slate-50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Personal Email (Email 2)</label>
                   <input
                     type="email"
                     readOnly={isReadOnly}
@@ -2010,12 +2057,13 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Company Email</label>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Email 3 (Alternate)</label>
                   <input
                     type="email"
                     readOnly={isReadOnly}
-                    value={formData.companyEmail || ''}
-                    onChange={(e) => handleChange('companyEmail', e.target.value)}
+                    value={formData.email3 || ''}
+                    onChange={(e) => handleChange('email3', e.target.value)}
+                    placeholder="Optional 3rd email address"
                     className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold read-only:bg-slate-50"
                   />
                 </div>

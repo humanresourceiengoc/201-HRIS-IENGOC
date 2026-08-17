@@ -10,6 +10,7 @@ interface SidebarProps {
   onNavigate: (tab: string) => void;
   onLogout: () => void;
   onChangeCompany: () => void;
+  onOpenGoogleSheets?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -18,7 +19,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   onNavigate,
   onLogout,
-  onChangeCompany
+  onChangeCompany,
+  onOpenGoogleSheets
 }) => {
   const isSeb = company === 'seb';
   const companyName = isSeb ? 'SEB Equipment' : 'IENCC';
@@ -76,6 +78,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           );
         })}
+        {onOpenGoogleSheets && (
+          <button
+            onClick={onOpenGoogleSheets}
+            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all text-emerald-700 bg-emerald-50/80 hover:bg-emerald-100/80 border border-emerald-200/80 mt-2 shadow-2xs cursor-pointer"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span>Google Sheet</span>
+          </button>
+        )}
       </nav>
 
       {/* Footer User Info */}

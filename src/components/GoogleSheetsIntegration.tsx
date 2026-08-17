@@ -17,7 +17,7 @@ import {
   ExportToSheetResult
 } from '../lib/googleSheets';
 import { saveEmployee } from '../lib/db';
-import { FileSpreadsheet, ExternalLink, RefreshCw, Upload, CheckCircle2, AlertCircle, LogOut, Zap, Code, Copy, Check, Link } from 'lucide-react';
+import { FileSpreadsheet, ExternalLink, RefreshCw, Upload, CheckCircle2, AlertCircle, LogOut, Zap, Code, Copy, Check, Link, Table } from 'lucide-react';
 
 interface GoogleSheetsIntegrationProps {
   company: CompanyKey;
@@ -250,33 +250,80 @@ export const GoogleSheetsIntegration: React.FC<GoogleSheetsIntegrationProps> = (
     var sheet = ss.getSheetByName('201 Masterlist') || ss.getActiveSheet();
     sheet.clear();
     
-    var headers = [
-      'Emp ID', 'Full Name', 'Company', 'Position', 'Department',
-      'Employment Status', 'Basic Salary', 'SSS No', 'PhilHealth No',
-      'Pag-IBIG No', 'TIN No', 'Contact No', 'Email', 'Address'
+    // Row 1: Super Headers / Groupings
+    var headerRow1 = [
+      'No.', '', 'Name', '', '', 'Birthday', 'Address',
+      'Contact Information', '', '', '',
+      'Employment Information', '', '', '', '', '', '',
+      'Verifier',
+      'GOVERNMENT NUMBERS', '', '', ''
     ];
-    sheet.appendRow(headers);
     
-    (payload.employees || []).forEach(function(emp) {
-      sheet.appendRow([
-        emp.id || '',
-        emp.fullName || '',
-        emp.company || '',
-        emp.position || '',
+    // Row 2: Sub-headers
+    var headerRow2 = [
+      '', 'EE ID', 'Last', 'First', 'Middle', '', '',
+      'Cell No.', 'Email 1', 'Email 2', 'Email 3',
+      'Name', 'Date Hired', 'Department', 'Position', 'Bio ID', 'New Bio ID', 'Status',
+      '',
+      'SSS', 'PHILHEALTH', 'HDMF', 'TIN'
+    ];
+    
+    sheet.appendRow(headerRow1);
+    sheet.appendRow(headerRow2);
+    
+    // Merge Category Header Cells
+    sheet.getRange('A1:A2').merge().setVerticalAlignment('middle').setHorizontalAlignment('center');
+    sheet.getRange('C1:E1').merge().setHorizontalAlignment('center');
+    sheet.getRange('F1:F2').merge().setVerticalAlignment('middle').setHorizontalAlignment('center');
+    sheet.getRange('G1:G2').merge().setVerticalAlignment('middle').setHorizontalAlignment('center');
+    sheet.getRange('H1:K1').merge().setHorizontalAlignment('center');
+    sheet.getRange('L1:R1').merge().setHorizontalAlignment('center');
+    sheet.getRange('S1:S2').merge().setVerticalAlignment('middle').setHorizontalAlignment('center');
+    sheet.getRange('T1:W1').merge().setHorizontalAlignment('center');
+    
+    // Header Colors & Typography
+    sheet.getRange('A1:W1').setBackground('#1E293B').setFontColor('#FFFFFF').setFontWeight('bold');
+    sheet.getRange('A2:W2').setBackground('#334155').setFontColor('#FFFFFF').setFontWeight('bold');
+    
+    // Append Employee Data Rows (23 columns)
+    var rows = (payload.employees || []).map(function(emp, idx) {
+      return [
+        emp.no || (idx + 1),
+        emp.eeId || '',
+        emp.lastName || '',
+        emp.firstName || '',
+        emp.middleName || '',
+        emp.birthday || '',
+        emp.address || '',
+        emp.cellNo || '',
+        emp.email1 || '',
+        emp.email2 || '',
+        emp.email3 || '',
+        emp.companyName || payload.companyName || '',
+        emp.dateHired || '',
         emp.department || '',
-        emp.status || '',
-        emp.basicSalary || 0,
-        emp.sssNo || '',
-        emp.philHealthNo || '',
-        emp.pagIbigNo || '',
-        emp.tinNo || '',
-        emp.contactNo || '',
-        emp.email || '',
-        emp.address || ''
-      ]);
+        emp.position || '',
+        emp.bioId || '',
+        emp.newBioId || '',
+        emp.status || 'ACTIVE',
+        emp.verifier || 'HR Verified',
+        emp.sss || '',
+        emp.philhealth || '',
+        emp.hdmf || '',
+        emp.tin || ''
+      ];
     });
     
-    return ContentService.createTextOutput(JSON.stringify({ status: 'success', count: payload.employees.length }))
+    if (rows.length > 0) {
+      sheet.getRange(3, 1, rows.length, 23).setValues(rows);
+    }
+    
+    // Auto-fit column widths
+    for (var col = 1; col <= 23; col++) {
+      sheet.autoResizeColumn(col);
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({ status: 'success', count: rows.length }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: err.toString() }))
@@ -345,6 +392,9 @@ export const GoogleSheetsIntegration: React.FC<GoogleSheetsIntegrationProps> = (
         suffix: emp.suffix || '',
         department: emp.department || '',
         position: emp.position || '',
+        bioId: emp.bioId || '',
+        newBioId: emp.newBioId || '',
+        verifier: emp.verifier || '',
         division: emp.division || '',
         locationBranch: emp.locationBranch || 'Mandaluyong',
         status: emp.status || 'ACTIVE',
@@ -353,6 +403,7 @@ export const GoogleSheetsIntegration: React.FC<GoogleSheetsIntegrationProps> = (
         mobileNumber: emp.mobileNumber || '',
         companyEmail: emp.companyEmail || '',
         personalEmail: emp.personalEmail || '',
+        email3: emp.email3 || '',
         sss: emp.sss || '',
         pagibig: emp.pagibig || '',
         philhealth: emp.philhealth || '',
@@ -555,6 +606,46 @@ export const GoogleSheetsIntegration: React.FC<GoogleSheetsIntegrationProps> = (
         >
           Save & Connect
         </button>
+      </div>
+
+      {/* 23 Columns Masterlist Schema Card */}
+      <div className="bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/50 space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
+            <Table className="w-3.5 h-3.5 text-emerald-400" />
+            Configured Masterlist Google Sheet Headers (23 Columns):
+          </span>
+          <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+            2-Row Categorized Layout
+          </span>
+        </div>
+        <div className="overflow-x-auto pb-1 text-[10px]">
+          <div className="flex flex-wrap gap-1.5">
+            <span className="px-2 py-0.5 bg-slate-700/80 text-slate-200 rounded font-bold border border-slate-600/60">1. No.</span>
+            <span className="px-2 py-0.5 bg-blue-900/60 text-blue-200 rounded font-bold border border-blue-700/50">2. EE ID</span>
+            <span className="px-2 py-0.5 bg-blue-900/60 text-blue-200 rounded font-bold border border-blue-700/50">3. Last</span>
+            <span className="px-2 py-0.5 bg-blue-900/60 text-blue-200 rounded font-bold border border-blue-700/50">4. First</span>
+            <span className="px-2 py-0.5 bg-blue-900/60 text-blue-200 rounded font-bold border border-blue-700/50">5. Middle</span>
+            <span className="px-2 py-0.5 bg-slate-700/80 text-slate-200 rounded font-bold border border-slate-600/60">6. Birthday</span>
+            <span className="px-2 py-0.5 bg-slate-700/80 text-slate-200 rounded font-bold border border-slate-600/60">7. Address</span>
+            <span className="px-2 py-0.5 bg-indigo-900/60 text-indigo-200 rounded font-bold border border-indigo-700/50">8. Cell No.</span>
+            <span className="px-2 py-0.5 bg-indigo-900/60 text-indigo-200 rounded font-bold border border-indigo-700/50">9. Email 1</span>
+            <span className="px-2 py-0.5 bg-indigo-900/60 text-indigo-200 rounded font-bold border border-indigo-700/50">10. Email 2</span>
+            <span className="px-2 py-0.5 bg-indigo-900/60 text-indigo-200 rounded font-bold border border-indigo-700/50">11. Email 3</span>
+            <span className="px-2 py-0.5 bg-purple-900/60 text-purple-200 rounded font-bold border border-purple-700/50">12. Name</span>
+            <span className="px-2 py-0.5 bg-purple-900/60 text-purple-200 rounded font-bold border border-purple-700/50">13. Date Hired</span>
+            <span className="px-2 py-0.5 bg-purple-900/60 text-purple-200 rounded font-bold border border-purple-700/50">14. Department</span>
+            <span className="px-2 py-0.5 bg-purple-900/60 text-purple-200 rounded font-bold border border-purple-700/50">15. Position</span>
+            <span className="px-2 py-0.5 bg-purple-900/60 text-purple-200 rounded font-bold border border-purple-700/50">16. Bio ID</span>
+            <span className="px-2 py-0.5 bg-purple-900/60 text-purple-200 rounded font-bold border border-purple-700/50">17. New Bio ID</span>
+            <span className="px-2 py-0.5 bg-purple-900/60 text-purple-200 rounded font-bold border border-purple-700/50">18. Status</span>
+            <span className="px-2 py-0.5 bg-amber-900/60 text-amber-200 rounded font-bold border border-amber-700/50">19. Verifier</span>
+            <span className="px-2 py-0.5 bg-emerald-900/60 text-emerald-200 rounded font-bold border border-emerald-700/50">20. SSS</span>
+            <span className="px-2 py-0.5 bg-emerald-900/60 text-emerald-200 rounded font-bold border border-emerald-700/50">21. PHILHEALTH</span>
+            <span className="px-2 py-0.5 bg-emerald-900/60 text-emerald-200 rounded font-bold border border-emerald-700/50">22. HDMF</span>
+            <span className="px-2 py-0.5 bg-emerald-900/60 text-emerald-200 rounded font-bold border border-emerald-700/50">23. TIN</span>
+          </div>
+        </div>
       </div>
 
 

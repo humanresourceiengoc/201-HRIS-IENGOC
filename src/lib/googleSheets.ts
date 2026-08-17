@@ -68,24 +68,32 @@ export const syncViaAppsScript = async (
     company,
     companyName,
     syncedAt: new Date().toISOString(),
-    employees: employees.map(emp => ({
-      id: emp.empId || emp.id,
-      firstName: emp.firstName,
-      lastName: emp.lastName,
+    employees: employees.map((emp, idx) => ({
+      no: idx + 1,
+      eeId: emp.empId || emp.employeeNumber || '',
+      lastName: emp.lastName || '',
+      firstName: emp.firstName || '',
       middleName: emp.middleName || '',
-      fullName: `${emp.firstName} ${emp.middleName ? emp.middleName + ' ' : ''}${emp.lastName}`,
-      company: emp.company || companyName,
-      position: emp.position || '',
+      birthday: emp.birthdate || '',
+      address: emp.currentAddress || emp.permanentAddress || '',
+      cellNo: emp.mobileNumber || '',
+      email1: emp.companyEmail || '',
+      email2: emp.personalEmail || '',
+      email3: emp.email3 || '',
+      companyName: emp.company === 'iencc' 
+        ? 'INDUSTRIAL ENERGIES CONST. CORP.' 
+        : (emp.company === 'seb' ? 'SUPERIOR ENERGIES BUILDERS & DEVELOPMENT CORP.' : companyName),
+      dateHired: emp.dateHired || emp.dateStarted || '',
       department: emp.department || '',
+      position: emp.position || '',
+      bioId: emp.bioId || '',
+      newBioId: emp.newBioId || '',
       status: emp.status || 'ACTIVE',
-      basicSalary: emp.monthlySalary || 0,
-      sssNo: emp.sss || '',
-      philHealthNo: emp.philhealth || '',
-      pagIbigNo: emp.pagibig || '',
-      tinNo: emp.tin || '',
-      contactNo: emp.mobileNumber || '',
-      email: emp.companyEmail || emp.personalEmail || '',
-      address: emp.currentAddress || ''
+      verifier: emp.verifier || emp.immediateSupervisor || emp.hiringManager || 'HR Verified',
+      sss: emp.sss || '',
+      philhealth: emp.philhealth || '',
+      hdmf: emp.pagibig || '',
+      tin: emp.tin || '',
     }))
   };
 
@@ -297,72 +305,92 @@ export const exportEmployeesToGoogleSheets = async (
     isExisting = true;
   }
 
-  // 2. Prepare Data Rows for Sheet 1 (201 Masterlist)
-  const masterlistHeaders = [
-    'Emp ID',
-    'Last Name',
-    'First Name',
-    'Middle Name',
-    'Suffix',
-    'Department',
-    'Position',
-    'Division',
-    'Branch',
-    'Status',
-    'Classification',
-    'Date Hired',
-    'Monthly Salary',
-    'Mobile Number',
-    'Personal Email',
-    'Company Email',
-    'SSS Number',
-    'PAG-IBIG MID',
-    'PhilHealth No',
-    'TIN',
-    'Payroll Bank',
-    'Account Number',
-    'Birthdate',
-    'Civil Status',
-    'Gender',
-    'Current Address',
-    'Emergency Contact Name',
-    'Emergency Relationship',
-    'Emergency Mobile',
+  // 2. Prepare Data Rows for Sheet 1 (201 Masterlist) - Exact 23-column format
+  const masterlistHeadersRow1 = [
+    'No.',
+    '',
+    'Name',
+    '',
+    '',
+    'Birthday',
+    'Address',
+    'Contact Information',
+    '',
+    '',
+    '',
+    'Employment Information',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    'Verifier',
+    'GOVERNMENT NUMBERS',
+    '',
+    '',
+    '',
   ];
 
-  const masterlistRows = employees.map(emp => [
-    emp.empId || '',
-    emp.lastName || '',
-    emp.firstName || '',
-    emp.middleName || '',
-    emp.suffix || '',
-    emp.department || '',
-    emp.position || '',
-    emp.division || '',
-    emp.locationBranch || '',
-    emp.status || 'ACTIVE',
-    emp.classification || 'Regular',
-    emp.dateHired || '',
-    emp.monthlySalary ? Number(emp.monthlySalary).toLocaleString('en-US', { style: 'currency', currency: 'PHP' }) : '',
-    emp.mobileNumber || '',
-    emp.personalEmail || '',
-    emp.companyEmail || '',
-    emp.sss || '',
-    emp.pagibig || '',
-    emp.philhealth || '',
-    emp.tin || '',
-    emp.bankName || 'BDO',
-    emp.bankAccountNumber || '',
-    emp.birthdate || '',
-    emp.civilStatus || '',
-    emp.gender || '',
-    emp.currentAddress || '',
-    emp.emergencyName || '',
-    emp.emergencyRelation || '',
-    emp.emergencyContact || '',
-  ]);
+  const masterlistHeadersRow2 = [
+    '',
+    'EE ID',
+    'Last',
+    'First',
+    'Middle',
+    '',
+    '',
+    'Cell No.',
+    'Email 1',
+    'Email 2',
+    'Email 3',
+    'Name',
+    'Date Hired',
+    'Department',
+    'Position',
+    'Bio ID',
+    'New Bio ID',
+    'Status',
+    '',
+    'SSS',
+    'PHILHEALTH',
+    'HDMF',
+    'TIN',
+  ];
 
-  const masterlistValues = [masterlistHeaders, ...masterlistRows];
+  const masterlistRows = employees.map((emp, idx) => {
+    const companyTitle = emp.company === 'iencc' 
+      ? 'INDUSTRIAL ENERGIES CONST. CORP.' 
+      : (emp.company === 'seb' ? 'SUPERIOR ENERGIES BUILDERS & DEVELOPMENT CORP.' : companyName);
+
+    return [
+      idx + 1,
+      emp.empId || emp.employeeNumber || '',
+      emp.lastName || '',
+      emp.firstName || '',
+      emp.middleName || '',
+      emp.birthdate || '',
+      emp.currentAddress || emp.permanentAddress || '',
+      emp.mobileNumber || '',
+      emp.companyEmail || '',
+      emp.personalEmail || '',
+      emp.email3 || '',
+      companyTitle,
+      emp.dateHired || emp.dateStarted || '',
+      emp.department || '',
+      emp.position || '',
+      emp.bioId || '',
+      emp.newBioId || '',
+      emp.status || 'ACTIVE',
+      emp.verifier || emp.immediateSupervisor || emp.hiringManager || 'HR Verified',
+      emp.sss || '',
+      emp.philhealth || '',
+      emp.pagibig || '',
+      emp.tin || '',
+    ];
+  });
+
+  const masterlistValues = [masterlistHeadersRow1, masterlistHeadersRow2, ...masterlistRows];
 
   // Populate Sheet 1 (Clear existing values first if updating existing)
   if (isExisting) {
@@ -447,7 +475,7 @@ export const exportEmployeesToGoogleSheets = async (
     }
   );
 
-  // 4. Formatting Header Rows
+  // 4. Formatting Header Rows & Merges
   try {
     await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
       method: 'POST',
@@ -457,20 +485,102 @@ export const exportEmployeesToGoogleSheets = async (
       },
       body: JSON.stringify({
         requests: [
+          // Row 1 Styling: Navy Dark Background (#1E293B)
           {
             repeatCell: {
               range: {
                 sheetId: 0,
                 startRowIndex: 0,
                 endRowIndex: 1,
+                startColumnIndex: 0,
+                endColumnIndex: 23,
               },
               cell: {
                 userEnteredFormat: {
-                  backgroundColor: { red: 0.08, green: 0.38, blue: 0.28 },
+                  backgroundColor: { red: 0.12, green: 0.16, blue: 0.23 },
                   textFormat: { bold: true, fontSize: 10, foregroundColor: { red: 1, green: 1, blue: 1 } },
+                  horizontalAlignment: 'CENTER',
+                  verticalAlignment: 'MIDDLE',
                 },
               },
-              fields: 'userEnteredFormat(backgroundColor,textFormat)',
+              fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)',
+            },
+          },
+          // Row 2 Styling: Slate Background (#334155)
+          {
+            repeatCell: {
+              range: {
+                sheetId: 0,
+                startRowIndex: 1,
+                endRowIndex: 2,
+                startColumnIndex: 0,
+                endColumnIndex: 23,
+              },
+              cell: {
+                userEnteredFormat: {
+                  backgroundColor: { red: 0.20, green: 0.25, blue: 0.33 },
+                  textFormat: { bold: true, fontSize: 10, foregroundColor: { red: 1, green: 1, blue: 1 } },
+                  horizontalAlignment: 'CENTER',
+                  verticalAlignment: 'MIDDLE',
+                },
+              },
+              fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)',
+            },
+          },
+          // Merge A1:A2 (No.)
+          {
+            mergeCells: {
+              range: { sheetId: 0, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 1 },
+              mergeType: 'MERGE_ALL',
+            },
+          },
+          // Merge C1:E1 (Name)
+          {
+            mergeCells: {
+              range: { sheetId: 0, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 2, endColumnIndex: 5 },
+              mergeType: 'MERGE_ALL',
+            },
+          },
+          // Merge F1:F2 (Birthday)
+          {
+            mergeCells: {
+              range: { sheetId: 0, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 5, endColumnIndex: 6 },
+              mergeType: 'MERGE_ALL',
+            },
+          },
+          // Merge G1:G2 (Address)
+          {
+            mergeCells: {
+              range: { sheetId: 0, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 6, endColumnIndex: 7 },
+              mergeType: 'MERGE_ALL',
+            },
+          },
+          // Merge H1:K1 (Contact Information)
+          {
+            mergeCells: {
+              range: { sheetId: 0, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 7, endColumnIndex: 11 },
+              mergeType: 'MERGE_ALL',
+            },
+          },
+          // Merge L1:R1 (Employment Information)
+          {
+            mergeCells: {
+              range: { sheetId: 0, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 11, endColumnIndex: 18 },
+              mergeType: 'MERGE_ALL',
+            },
+          },
+          // Merge S1:S2 (Verifier)
+          {
+            mergeCells: {
+              range: { sheetId: 0, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 18, endColumnIndex: 19 },
+              mergeType: 'MERGE_ALL',
+            },
+          },
+          // Merge T1:W1 (GOVERNMENT NUMBERS)
+          {
+            mergeCells: {
+              range: { sheetId: 0, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 19, endColumnIndex: 23 },
+              mergeType: 'MERGE_ALL',
             },
           },
         ],
@@ -563,43 +673,53 @@ export const fetchEmployeesFromGoogleSheet = async (
     throw new Error('Google Sheet is empty or missing data rows.');
   }
 
-  const headers = values[0].map(h => h.trim().toLowerCase());
-  const rows = values.slice(1);
+  // Detect if Row 0 is Category header and Row 1 is Sub-header
+  const isMultiRowHeader = values.length >= 3 && values[1].some(c => {
+    const s = (c || '').toLowerCase();
+    return s.includes('ee id') || s.includes('last') || s.includes('first') || s.includes('cell no') || s.includes('email 1');
+  });
+
+  const headersRow = isMultiRowHeader ? values[1] : values[0];
+  const combinedHeaders = headersRow.map((h, colIdx) => {
+    const h1 = (values[0]?.[colIdx] || '').trim();
+    const h2 = (h || '').trim();
+    return `${h1} ${h2}`.toLowerCase();
+  });
+
+  const rows = isMultiRowHeader ? values.slice(2) : values.slice(1);
 
   const importedEmployees: Partial<Employee>[] = rows.map(row => {
     const getVal = (colNames: string[]) => {
       for (const name of colNames) {
-        const idx = headers.findIndex(h => h.includes(name.toLowerCase()));
+        const idx = combinedHeaders.findIndex(h => h.includes(name.toLowerCase()));
         if (idx !== -1 && row[idx]) return row[idx].trim();
       }
       return '';
     };
 
     return {
-      empId: getVal(['emp id', 'employee id', 'id']),
-      lastName: getVal(['last name', 'lastname']),
-      firstName: getVal(['first name', 'firstname']),
-      middleName: getVal(['middle name', 'middlename']),
+      empId: getVal(['ee id', 'emp id', 'employee id', 'id']),
+      lastName: getVal(['last', 'lastname']),
+      firstName: getVal(['first', 'firstname']),
+      middleName: getVal(['middle', 'middlename']),
       suffix: getVal(['suffix']),
       department: getVal(['department']),
       position: getVal(['position', 'title', 'role']),
-      division: getVal(['division']),
-      locationBranch: getVal(['branch', 'location']),
+      bioId: getVal(['bio id', 'biometric id']),
+      newBioId: getVal(['new bio id']),
       status: (getVal(['status']) || 'ACTIVE').toUpperCase() as any,
+      verifier: getVal(['verifier']),
       classification: getVal(['classification', 'employment status']) || 'Regular',
       dateHired: getVal(['date hired', 'hired date', 'hired']),
-      mobileNumber: getVal(['mobile', 'phone']),
-      personalEmail: getVal(['personal email', 'email']),
-      companyEmail: getVal(['company email']),
+      mobileNumber: getVal(['cell no', 'mobile', 'phone']),
+      companyEmail: getVal(['email 1', 'company email']),
+      personalEmail: getVal(['email 2', 'personal email', 'email']),
+      email3: getVal(['email 3']),
       sss: getVal(['sss']),
-      pagibig: getVal(['pagibig', 'pag-ibig']),
+      pagibig: getVal(['hdmf', 'pagibig', 'pag-ibig']),
       philhealth: getVal(['philhealth']),
       tin: getVal(['tin']),
-      bankName: getVal(['bank', 'payroll bank']) || 'BDO',
-      bankAccountNumber: getVal(['account number', 'account no']),
-      birthdate: getVal(['birthdate', 'birth date', 'dob']),
-      civilStatus: getVal(['civil status']) as any,
-      gender: getVal(['gender']) as any,
+      birthdate: getVal(['birthday', 'birthdate', 'birth date', 'dob']),
       currentAddress: getVal(['address', 'current address']),
       emergencyName: getVal(['emergency contact', 'emergency name']),
       emergencyRelation: getVal(['relationship', 'emergency relation']),

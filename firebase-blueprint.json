@@ -1,66 +1,84 @@
 {
   "entities": {
-    "UserAccount": {
-      "title": "User Account",
-      "description": "System user account with role and approval status",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "email": { "type": "string" },
-        "role": { "type": "string", "enum": ["admin", "viewer", "user"] },
-        "category": { "type": "string" },
-        "approved": { "type": "boolean" },
-        "verificationStatus": { "type": "string", "enum": ["pending", "approved", "rejected"] },
-        "company": { "type": "string" },
-        "emailVerified": { "type": "boolean" },
-        "blocked": { "type": "boolean" },
-        "createdAt": { "type": "string" }
-      },
-      "required": ["id", "email", "role"]
-    },
     "Employee": {
       "title": "Employee",
-      "description": "Employee 201 profile record",
+      "description": "201 Employee records across company entities",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "empId": { "type": "string" },
+        "company": { "type": "string" },
         "firstName": { "type": "string" },
         "lastName": { "type": "string" },
-        "company": { "type": "string" }
+        "middleName": { "type": "string" },
+        "suffix": { "type": "string" },
+        "department": { "type": "string" },
+        "position": { "type": "string" },
+        "bioId": { "type": "string" },
+        "newBioId": { "type": "string" },
+        "status": { "type": "string" },
+        "classification": { "type": "string" },
+        "dateHired": { "type": "string" },
+        "monthlySalary": { "type": "number" },
+        "mobileNumber": { "type": "string" },
+        "personalEmail": { "type": "string" },
+        "companyEmail": { "type": "string" },
+        "email3": { "type": "string" },
+        "sss": { "type": "string" },
+        "pagibig": { "type": "string" },
+        "philhealth": { "type": "string" },
+        "tin": { "type": "string" },
+        "verifier": { "type": "string" },
+        "currentAddress": { "type": "string" },
+        "updatedAt": { "type": "string" }
       },
-      "required": ["id", "empId", "firstName", "lastName"]
+      "required": ["empId", "company", "lastName", "firstName"]
+    },
+    "DocumentRequirement": {
+      "title": "DocumentRequirement",
+      "description": "201 Checklist requirement configuration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "company": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "required": { "type": "boolean" }
+      },
+      "required": ["id", "company", "name"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Audit trail log records",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "company": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "string" },
+        "user": { "type": "string" }
+      },
+      "required": ["id", "timestamp", "action"]
     }
   },
   "firestore": {
-    "/users/{userId}": {
-      "schema": { "$ref": "#/entities/UserAccount" },
-      "description": "Collection of user accounts with approval and role settings"
-    },
-    "/hris_users/{userId}": {
-      "schema": { "$ref": "#/entities/UserAccount" },
-      "description": "Legacy alias collection of user accounts"
-    },
-    "/employees/{employeeId}": {
-      "schema": { "$ref": "#/entities/Employee" },
-      "description": "201 Employee records"
-    },
-    "/requirements/{reqId}": {
-      "schema": "DocumentRequirement",
-      "description": "Document requirements catalog"
-    },
-    "/custom_events/{eventId}": {
-      "schema": "CustomCalendarEvent",
-      "description": "Calendar events"
-    },
-    "/file_blobs/{fileId}": {
-      "schema": "FileBlob",
-      "description": "Cloud file attachments and documents"
-    },
-    "/presence/{userId}": {
-      "schema": "CollaboratorPresence",
-      "description": "Real-time user online presence"
+    "collections": {
+      "employees": {
+        "schema": "Employee",
+        "description": "Collection of all 201 employee files"
+      },
+      "requirements": {
+        "schema": "DocumentRequirement",
+        "description": "Collection of checklist requirements"
+      },
+      "audit_logs": {
+        "schema": "AuditLog",
+        "description": "Collection of audit activity logs"
+      },
+      "system_settings": {
+        "description": "Application and sync configuration"
+      }
     }
   }
 }

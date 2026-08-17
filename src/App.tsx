@@ -37,6 +37,8 @@ import { EmployeeIdCardModal } from './components/EmployeeIdCardModal';
 import { ConfirmModal } from './components/ConfirmModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { PublicVerificationView } from './components/PublicVerificationView';
+import { GoogleSheetsIntegration } from './components/GoogleSheetsIntegration';
+import { FileSpreadsheet } from 'lucide-react';
 
 export default function App() {
   const [company, setCompany] = useState<CompanyKey | null>(null);
@@ -58,6 +60,9 @@ export default function App() {
     mode: 'view',
     employee: null,
   });
+
+  // Google Sheet Quick Modal State
+  const [showGoogleSheetModal, setShowGoogleSheetModal] = useState<boolean>(false);
 
   // Toast State
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -462,6 +467,7 @@ export default function App() {
         onNavigate={setActiveTab}
         onLogout={handleLogout}
         onChangeCompany={handleChangeCompany}
+        onOpenGoogleSheets={() => setShowGoogleSheetModal(true)}
       />
 
       {/* Main Container */}
@@ -471,6 +477,7 @@ export default function App() {
           userRole={currentUser.role}
           onOpenAddModal={handleOpenAddModal}
           onOpenBlankForm={() => setShowBlankFormModal(true)}
+          onOpenGoogleSheetModal={() => setShowGoogleSheetModal(true)}
           lastSyncTime={lastSyncTime}
         />
 
@@ -504,6 +511,7 @@ export default function App() {
               onDeleteEmployee={handleDeleteEmployee}
               onPrintEmployee={handleTriggerPrint}
               onOpenIdCard={(emp) => setIdCardEmployee(emp)}
+              onOpenGoogleSheets={() => setShowGoogleSheetModal(true)}
             />
           )}
 
@@ -659,6 +667,39 @@ export default function App() {
           isOpen={showBlankFormModal}
           onClose={() => setShowBlankFormModal(false)}
         />
+      )}
+
+      {/* Google Sheets Quick Access Modal */}
+      {company && showGoogleSheetModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-3xl w-full p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
+                  <FileSpreadsheet className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-white">Google Sheet Masterlist</h3>
+                  <p className="text-xs text-slate-400">23-Column Masterlist Real-Time Sync & Direct Webhook</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowGoogleSheetModal(false)}
+                className="px-3 py-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+              >
+                ✕ Close
+              </button>
+            </div>
+            <GoogleSheetsIntegration
+              company={company}
+              companyName={company === 'iencc' ? 'I-ENERGIES CONSTRUCTION CORPORATION' : 'SUPERIOR ENERGIES BUILDERS & DEVELOPMENT CORP.'}
+              userRole={currentUser.role}
+              employees={employees}
+              onRefreshData={loadCompanyData}
+              onToast={addToast}
+            />
+          </div>
+        </div>
       )}
 
       {/* Toast Notifications */}

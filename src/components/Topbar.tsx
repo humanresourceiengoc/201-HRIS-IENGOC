@@ -1,12 +1,13 @@
 import React from 'react';
 import { UserRole } from '../types';
-import { UserPlus, FileText, Shield, Eye, CheckCircle2, CloudCheck } from 'lucide-react';
+import { UserPlus, FileText, Shield, Eye, CheckCircle2, FileSpreadsheet, Cloud, Zap } from 'lucide-react';
 
 interface TopbarProps {
   pageTitle: string;
   userRole: UserRole;
   onOpenAddModal: () => void;
   onOpenBlankForm?: () => void;
+  onOpenGoogleSheetModal?: () => void;
   lastSyncTime?: Date | string | null;
 }
 
@@ -15,18 +16,19 @@ export const Topbar: React.FC<TopbarProps> = ({
   userRole,
   onOpenAddModal,
   onOpenBlankForm,
+  onOpenGoogleSheetModal,
   lastSyncTime
 }) => {
   const formatSyncTime = (time?: Date | string | null) => {
-    if (!time) return 'Active';
+    if (!time) return 'Live';
     const dateObj = typeof time === 'string' ? new Date(time) : time;
-    if (isNaN(dateObj.getTime())) return 'Active';
+    if (isNaN(dateObj.getTime())) return 'Live';
     return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   };
 
   return (
-    <header className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-slate-200 px-6 sm:px-8 py-3.5 flex flex-wrap items-center justify-between z-20 shadow-2xs gap-3">
-      <div className="flex flex-wrap items-center gap-3">
+    <header className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 sm:px-8 py-3 flex flex-wrap items-center justify-between z-20 shadow-2xs gap-3">
+      <div className="flex flex-wrap items-center gap-2.5">
         <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">{pageTitle}</h1>
         {userRole === 'admin' ? (
           <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[11px] font-extrabold rounded-full border border-indigo-200/80 flex items-center gap-1.5 shadow-2xs">
@@ -40,21 +42,42 @@ export const Topbar: React.FC<TopbarProps> = ({
           </span>
         )}
 
-        {/* Firestore Sync Timestamp Indicator */}
+        {/* Permanent Firestore Cloud Database Indicator */}
         <div
-          className="px-2.5 py-1 bg-emerald-50/90 text-emerald-800 text-[11px] font-semibold rounded-full border border-emerald-200 flex items-center gap-1.5 shadow-2xs"
-          title="Firestore Cloud Database Synchronization Status. Your local changes are saved and synced."
+          className="px-2.5 py-1 bg-blue-50 text-blue-900 text-[11px] font-bold rounded-full border border-blue-200 flex items-center gap-1.5 shadow-2xs"
+          title="All employees, records, and files are permanently saved to Firebase Cloud Firestore across devices."
+        >
+          <Cloud className="w-3.5 h-3.5 text-blue-600" />
+          <span>Permanent Storage: <strong className="font-extrabold text-blue-700">Firestore Cloud</strong></span>
+        </div>
+
+        {/* Sync Status */}
+        <div
+          className="px-2.5 py-1 bg-emerald-50 text-emerald-800 text-[11px] font-semibold rounded-full border border-emerald-200 flex items-center gap-1.5 shadow-2xs"
+          title="Real-time multi-device sync timestamp"
         >
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Sync Safe: <strong className="font-bold text-emerald-900">{formatSyncTime(lastSyncTime)}</strong></span>
+          <span>Synced: <strong className="font-bold text-emerald-900">{formatSyncTime(lastSyncTime)}</strong></span>
         </div>
       </div>
 
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2">
+        {/* Dedicated Google Sheet Button */}
+        {onOpenGoogleSheetModal && (
+          <button
+            onClick={onOpenGoogleSheetModal}
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold transition-all shadow-sm hover:shadow-md flex items-center gap-2 border border-emerald-700 cursor-pointer"
+            title="Open or configure Google Sheets Masterlist Sync"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-white" />
+            <span>Google Sheet</span>
+          </button>
+        )}
+
         {onOpenBlankForm && (
           <button
             onClick={onOpenBlankForm}
@@ -62,7 +85,7 @@ export const Topbar: React.FC<TopbarProps> = ({
             title="Print blank 201 Employee Personal Data Sheet for new hire onboarding"
           >
             <FileText className="w-4 h-4 text-amber-400" />
-            <span>Print Blank 201 Form</span>
+            <span>Print Blank 201</span>
           </button>
         )}
 

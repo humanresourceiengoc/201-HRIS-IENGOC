@@ -513,6 +513,7 @@ export default function App() {
               onPrintEmployee={handleTriggerPrint}
               onOpenIdCard={(emp) => setIdCardEmployee(emp)}
               onOpenGoogleSheets={() => setShowGoogleSheetModal(true)}
+              onToast={addToast}
             />
           )}
 

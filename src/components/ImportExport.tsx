@@ -418,31 +418,79 @@ export const ImportExport: React.FC<ImportExportProps> = ({
           // 0: No., 1: EE ID, 2: Last, 3: First, 4: Middle, 5: Birthday, 6: Address, 7: Cell No.,
           // 8: Email 1, 9: Email 2, 10: Email 3, 11: Company/Name, 12: Date Hired, 13: Department,
           // 14: Position, 15: Bio ID, 16: New Bio ID, 17: Status, 18: Verifier, 19: SSS, 20: PHILHEALTH, 21: HDMF, 22: TIN
-          const empId = row[1]?.trim() || `EMP-${Date.now()}-${parsedRecords.length + 1}`;
+          
+          let empId = row[1]?.trim() || '';
+          let lastName = row[2]?.trim() || '';
+          let firstName = row[3]?.trim() || '';
+          let middleName = row[4]?.trim() || '';
+          let birthdate = row[5]?.trim() || '';
+          let currentAddress = row[6]?.trim() || '';
+          let mobileNumber = row[7]?.trim() || '';
+          let companyEmail = row[8]?.trim() || '';
+          let personalEmail = row[9]?.trim() || '';
+          let email3 = row[10]?.trim() || '';
+          let dateHired = row[12]?.trim() || '';
+          let department = row[13]?.trim() || '';
+          let position = row[14]?.trim() || '';
+          let bioId = row[15]?.trim() || '';
+          let newBioId = row[16]?.trim() || '';
+          let status = row[17]?.trim() || 'ACTIVE';
+          let verifier = row[18]?.trim() || '';
+          let sss = row[19]?.trim() || '';
+          let philhealth = row[20]?.trim() || '';
+          let pagibig = row[21]?.trim() || '';
+          let tin = row[22]?.trim() || '';
+
+          // Auto-Correction if columns are shifted:
+          // Case 1: If status is an email address, shift it to personalEmail and set status to ACTIVE
+          if (status.includes('@')) {
+            personalEmail = status;
+            status = 'ACTIVE';
+          }
+
+          // Case 2: If position is Civil Status (e.g. Single, Married) and empId is a Last Name
+          if (['single', 'married', 'widowed', 'separated', 'divorced'].includes(position.toLowerCase())) {
+            position = 'Staff';
+          }
+
+          if (!empId || (!empId.startsWith('EMP') && !empId.startsWith('IEN') && !empId.startsWith('SEB') && !/^\d+$/.test(empId) && lastName)) {
+            // empId was Last Name, lastName was First Name
+            if (empId && !lastName.includes('@')) {
+              middleName = firstName;
+              firstName = lastName;
+              lastName = empId;
+              empId = `EMP-${Date.now().toString().slice(-4)}${parsedRecords.length + 1}`;
+            }
+          }
+
+          if (!empId) {
+            empId = `EMP-${Date.now()}-${parsedRecords.length + 1}`;
+          }
+
           const isExisting = existingEmpIds.has(empId.toLowerCase());
 
           record = {
             empId,
-            lastName: row[2]?.trim() || 'Unknown',
-            firstName: row[3]?.trim() || 'Unknown',
-            middleName: row[4]?.trim() || '',
-            birthdate: row[5]?.trim() || '',
-            currentAddress: row[6]?.trim() || '',
-            mobileNumber: row[7]?.trim() || '',
-            companyEmail: row[8]?.trim() || '',
-            personalEmail: row[9]?.trim() || '',
-            email3: row[10]?.trim() || '',
-            dateHired: row[12]?.trim() || '',
-            department: row[13]?.trim() || '',
-            position: row[14]?.trim() || '',
-            bioId: row[15]?.trim() || '',
-            newBioId: row[16]?.trim() || '',
-            status: row[17]?.trim() || 'ACTIVE',
-            verifier: row[18]?.trim() || '',
-            sss: row[19]?.trim() || '',
-            philhealth: row[20]?.trim() || '',
-            pagibig: row[21]?.trim() || '',
-            tin: row[22]?.trim() || '',
+            lastName: lastName || 'Unknown',
+            firstName: firstName || 'Unknown',
+            middleName,
+            birthdate,
+            currentAddress,
+            mobileNumber,
+            companyEmail,
+            personalEmail,
+            email3,
+            dateHired,
+            department: /^\d+$/.test(department) ? 'Operations' : department,
+            position: position || 'Staff',
+            bioId,
+            newBioId,
+            status: status || 'ACTIVE',
+            verifier,
+            sss,
+            philhealth,
+            pagibig,
+            tin,
             isExisting
           };
         } else {

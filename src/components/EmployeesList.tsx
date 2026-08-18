@@ -18,8 +18,10 @@ import {
   RotateCcw,
   SlidersHorizontal,
   Building2,
-  Briefcase
+  Briefcase,
+  Wand2
 } from 'lucide-react';
+import { saveEmployee } from '../lib/db';
 
 interface EmployeesListProps {
   company: CompanyKey;
@@ -32,6 +34,7 @@ interface EmployeesListProps {
   onPrintEmployee: (id: string) => void;
   onOpenIdCard?: (emp: Employee) => void;
   onOpenGoogleSheets?: () => void;
+  onToast?: (msg: string, type: 'success' | 'error' | 'info' | 'warning') => void;
 }
 
 export const EmployeesList: React.FC<EmployeesListProps> = ({
@@ -44,7 +47,8 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
   onDeleteEmployee,
   onPrintEmployee,
   onOpenIdCard,
-  onOpenGoogleSheets
+  onOpenGoogleSheets,
+  onToast
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -56,10 +60,70 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
 
   const isSeb = company === 'seb';
 
+  // Check if any employees have shifted columns (e.g., status is an email, position is Single/Married, etc.)
+  const shiftedCount = useMemo(() => {
+    return (employees || []).filter(e => {
+      if (!e) return false;
+      const hasEmailInStatus = Boolean(e.status && e.status.includes('@'));
+      const hasCivilStatusInPosition = ['single', 'married', 'widowed', 'separated', 'divorced'].includes((e.position || '').trim().toLowerCase());
+      const hasNumberInDept = /^\d+$/.test((e.department || '').trim());
+      return hasEmailInStatus || hasCivilStatusInPosition || hasNumberInDept;
+    }).length;
+  }, [employees]);
+
+  // One-click Auto Repair for Shifted Employee Records
+  const handleAutoRepairShiftedData = () => {
+    let fixedCount = 0;
+    (employees || []).forEach(emp => {
+      const hasEmailInStatus = Boolean(emp.status && emp.status.includes('@'));
+      const hasCivilStatusInPosition = ['single', 'married', 'widowed', 'separated', 'divorced'].includes((emp.position || '').trim().toLowerCase());
+      const hasNumberInDept = /^\d+$/.test((emp.department || '').trim());
+
+      if (hasEmailInStatus || hasCivilStatusInPosition || hasNumberInDept) {
+        const fixed: Partial<Employee> = { ...emp };
+
+        // 1. If status is an email
+        if (emp.status && emp.status.includes('@')) {
+          fixed.personalEmail = emp.personalEmail || emp.status;
+          fixed.status = 'ACTIVE';
+        }
+
+        // 2. If position is Single/Married (Civil status)
+        if (hasCivilStatusInPosition) {
+          fixed.civilStatus = (emp.position?.trim() as any) || 'Single';
+          fixed.position = 'Staff';
+        }
+
+        // 3. If department is a number (Age or Bio ID)
+        if (hasNumberInDept) {
+          if (!fixed.bioId) fixed.bioId = emp.department;
+          fixed.department = 'Operations';
+        }
+
+        // 4. If empId is a Last Name (e.g. Aquino, Avila) and lastName is First Name
+        if (emp.empId && !emp.empId.startsWith('EMP') && !emp.empId.startsWith('IEN') && !emp.empId.startsWith('SEB') && !/^\d+$/.test(emp.empId) && emp.lastName) {
+          fixed.lastName = emp.empId;
+          fixed.firstName = emp.lastName;
+          if (emp.firstName && !fixed.middleName) fixed.middleName = emp.firstName;
+          fixed.empId = `EMP-${Date.now().toString().slice(-4)}${Math.floor(Math.random() * 100)}`;
+        }
+
+        saveEmployee(company, fixed);
+        fixedCount++;
+      }
+    });
+
+    if (onToast) {
+      onToast(`Successfully aligned and updated ${fixedCount} employee records in Cloud!`, 'success');
+    }
+  };
+
   const departments = useMemo(() => {
     const set = new Set<string>();
     (employees || []).forEach(e => {
-      if (e && e.department) set.add(e.department.trim());
+      if (e && e.department && !/^\d+$/.test(e.department.trim())) {
+        set.add(e.department.trim());
+      }
     });
     return Array.from(set).filter(Boolean).sort();
   }, [employees]);
@@ -117,7 +181,8 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
         if (!matchesSearch) return false;
       }
 
-      if (statusFilter && emp.status !== statusFilter) return false;
+      const normalizedStatus = emp.status && emp.status.includes('@') ? 'ACTIVE' : emp.status;
+      if (statusFilter && normalizedStatus !== statusFilter) return false;
       if (classFilter && emp.classification !== classFilter) return false;
       if (deptFilter && emp.department !== deptFilter) return false;
 
@@ -146,7 +211,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
 
   const getDocProgress = (emp: Employee) => {
     const docs = emp.documents || {};
-    const totalReqs = requirements.length || 6;
+    const totalReqs = requirements.length;
     const completed = Object.values(docs).filter(d => Boolean(d && (d.url || d.fileId || d.dataUrl))).length;
     const percent = totalReqs > 0 ? Math.round((completed / totalReqs) * 100) : 0;
     return { completed, total: totalReqs, percent };
@@ -168,7 +233,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
       {/* Control Center Header & Search Bar */}
-      <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/60 flex flex-col gap-3.5">
+      <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/70 flex flex-col gap-3.5">
         {/* Tier 1: Search Bar & Primary Actions */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {/* Main Search Input */}
@@ -184,7 +249,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-14 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 rounded-md hover:bg-slate-100 transition-colors"
+                className="absolute right-14 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
                 title="Clear search"
               >
                 <X className="w-3.5 h-3.5" />
@@ -199,6 +264,17 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
 
           {/* Quick Action Buttons */}
           <div className="flex items-center gap-2 shrink-0">
+            {shiftedCount > 0 && userRole === 'admin' && (
+              <button
+                onClick={handleAutoRepairShiftedData}
+                className="h-10 px-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-sm hover:shadow-md cursor-pointer animate-pulse"
+                title="Automatically fix and realign imported column data (emails, IDs, names, status)"
+              >
+                <Wand2 className="w-4 h-4" />
+                <span>Auto-Align ({shiftedCount}) Data</span>
+              </button>
+            )}
+
             {hasActiveFilters && (
               <button
                 onClick={handleResetFilters}
@@ -234,7 +310,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-9 px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs"
+            className="h-9 px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs cursor-pointer"
           >
             <option value="">All Statuses</option>
             <option value="ACTIVE">ACTIVE</option>
@@ -246,7 +322,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
           <select
             value={classFilter}
             onChange={(e) => setClassFilter(e.target.value)}
-            className="h-9 px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs"
+            className="h-9 px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs cursor-pointer"
           >
             <option value="">All Classifications</option>
             <option value="Regular">Regular</option>
@@ -261,7 +337,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
           <select
             value={completenessFilter}
             onChange={(e) => setCompletenessFilter(e.target.value)}
-            className="h-9 px-3 bg-white border border-teal-300 rounded-xl text-xs font-bold text-teal-800 bg-teal-50/50 outline-none focus:ring-1 focus:ring-teal-500 shadow-2xs"
+            className="h-9 px-3 bg-white border border-teal-300 rounded-xl text-xs font-bold text-teal-800 bg-teal-50/50 outline-none focus:ring-1 focus:ring-teal-500 shadow-2xs cursor-pointer"
             title="Advanced Filter by 201 File Completeness"
           >
             <option value="all">201 Completeness: All</option>
@@ -275,7 +351,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
           <select
             value={deptFilter}
             onChange={(e) => setDeptFilter(e.target.value)}
-            className="h-9 px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs"
+            className="h-9 px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs cursor-pointer"
           >
             <option value="">All Departments</option>
             {departments.map(d => (
@@ -286,7 +362,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
           {/* Expiry Alerts Button Toggle */}
           <button
             onClick={() => setExpiryFilter(prev => !prev)}
-            className={`h-9 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border shadow-2xs ${
+            className={`h-9 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border shadow-2xs cursor-pointer ${
               expiryFilter
                 ? 'bg-rose-600 text-white border-rose-700'
                 : 'bg-white text-rose-700 border-rose-300 hover:bg-rose-50'
@@ -300,7 +376,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
           {/* Missing Gov IDs Button Toggle */}
           <button
             onClick={() => setMissingGovFilter(prev => !prev)}
-            className={`h-9 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border shadow-2xs ${
+            className={`h-9 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border shadow-2xs cursor-pointer ${
               missingGovFilter
                 ? 'bg-amber-600 text-white border-amber-700'
                 : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
@@ -313,38 +389,69 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
         </div>
       </div>
 
-      {/* Symmetrical High-Precision Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs border-collapse">
+      {/* Symmetrical High-Precision Table with STICKY Action Column */}
+      <div className="overflow-x-auto relative">
+        <table className="w-full text-left text-xs border-collapse min-w-[1050px]">
           <thead>
-            <tr className="bg-slate-100/90 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
-              <th className="py-3 px-4 w-28 text-left">EMP ID</th>
-              <th className="py-3 px-3 w-14 text-center">PHOTO</th>
-              <th className="py-3 px-4 min-w-[220px] text-left">EMPLOYEE NAME & CONTACT</th>
-              <th className="py-3 px-4 min-w-[180px] text-left">POSITION & DEPT</th>
-              <th className="py-3 px-4 w-32 text-center">STATUS</th>
-              <th className="py-3 px-4 w-36 text-center">CLASSIFICATION</th>
-              <th className="py-3 px-4 w-36 text-center">201 COMPLETION</th>
-              <th className="py-3 px-4 w-44 text-right">ACTIONS</th>
+            <tr className="bg-slate-100 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
+              <th className="py-3.5 px-4 w-28 text-left">EMP ID</th>
+              <th className="py-3.5 px-3 w-14 text-center">PHOTO</th>
+              <th className="py-3.5 px-4 min-w-[220px] text-left">EMPLOYEE NAME & CONTACT</th>
+              <th className="py-3.5 px-4 min-w-[170px] text-left">POSITION & DEPT</th>
+              <th className="py-3.5 px-4 w-28 text-center">STATUS</th>
+              <th className="py-3.5 px-4 w-36 text-center">CLASSIFICATION</th>
+              <th className="py-3.5 px-4 w-36 text-center">201 COMPLETION</th>
+              {/* STICKY ACTIONS HEADER */}
+              <th className="py-3.5 px-4 w-[210px] min-w-[210px] text-right sticky right-0 bg-slate-100/95 backdrop-blur-xs border-l border-slate-200 z-10 shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.06)]">
+                ACTIONS
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredEmployees.map(emp => {
               const { completed, total, percent } = getDocProgress(emp);
-              const initials = getInitials(emp.firstName, emp.lastName);
-              const bgClass = getAvatarBg(emp.lastName || 'emp');
               const missingGov = checkMissingGovIds(emp);
               const hasExpiries = checkDocumentExpiries([emp], requirements).length > 0;
+
+              // Normalized Clean Values for Display
+              const hasEmailInStatus = Boolean(emp.status && emp.status.includes('@'));
+              const hasCivilStatusInPos = ['single', 'married', 'widowed', 'separated', 'divorced'].includes((emp.position || '').trim().toLowerCase());
+              const isEmpIdName = Boolean(emp.empId && !emp.empId.startsWith('EMP') && !emp.empId.startsWith('IEN') && !emp.empId.startsWith('SEB') && !/^\d+$/.test(emp.empId));
+
+              let displayEmpId = emp.empId || 'N/A';
+              let displayLastName = emp.lastName || '';
+              let displayFirstName = emp.firstName || '';
+              let displayMiddleName = emp.middleName || '';
+              let displayPosition = emp.position || '—';
+              let displayDepartment = emp.department || '—';
+              let displayStatus = emp.status || 'ACTIVE';
+              let displayEmail = emp.personalEmail || emp.companyEmail || emp.email3 || '';
+
+              if (hasEmailInStatus) {
+                displayEmail = emp.status || '';
+                displayStatus = 'ACTIVE';
+              }
+
+              if (hasCivilStatusInPos && isEmpIdName) {
+                displayLastName = emp.empId || '';
+                displayFirstName = emp.lastName || '';
+                displayMiddleName = emp.firstName || '';
+                displayPosition = 'Staff';
+                displayDepartment = /^\d+$/.test(emp.department || '') ? 'Operations' : (emp.department || 'Operations');
+              }
+
+              const initials = getInitials(displayFirstName, displayLastName);
+              const bgClass = getAvatarBg(displayLastName || 'emp');
 
               return (
                 <tr
                   key={emp.id}
                   onClick={() => onViewEmployee(emp.id)}
-                  className="hover:bg-blue-50/40 transition-colors cursor-pointer group"
+                  className="hover:bg-blue-50/50 transition-colors cursor-pointer group"
                 >
                   {/* EMP ID */}
                   <td className="py-3 px-4 font-mono font-bold text-blue-700 text-left align-middle">
-                    {emp.empId || 'N/A'}
+                    {displayEmpId}
                   </td>
 
                   {/* Photo Avatar */}
@@ -371,8 +478,8 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
                   <td className="py-3 px-4 align-middle text-left">
                     <div className="flex flex-col gap-0.5">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
-                          {emp.lastName}, {emp.firstName} {emp.middleName ? `${emp.middleName[0]}.` : ''} {emp.suffix ? emp.suffix : ''}
+                        <span className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors text-sm">
+                          {displayLastName}, {displayFirstName} {displayMiddleName ? `${displayMiddleName[0]}.` : ''} {emp.suffix ? emp.suffix : ''}
                         </span>
                         {hasExpiries && (
                           <span className="p-0.5 bg-rose-100 text-rose-700 rounded-full" title="Expired or expiring document clearance alert!">
@@ -380,11 +487,11 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
                           </span>
                         )}
                       </div>
-                      {(emp.personalEmail || emp.companyEmail || emp.email3) && (
+                      {displayEmail && (
                         <span className="text-[11px] font-normal text-slate-500 flex items-center gap-1 font-mono">
-                          <Mail className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span className="truncate max-w-[220px]" title={emp.personalEmail || emp.companyEmail || emp.email3}>
-                            {emp.personalEmail || emp.companyEmail || emp.email3}
+                          <Mail className="w-3 h-3 text-rose-500 shrink-0" />
+                          <span className="truncate max-w-[240px]" title={displayEmail}>
+                            {displayEmail}
                           </span>
                         </span>
                       )}
@@ -401,11 +508,11 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
                     <div className="flex flex-col gap-0.5">
                       <div className="font-semibold text-slate-800 flex items-center gap-1">
                         <Briefcase className="w-3 h-3 text-slate-400 shrink-0" />
-                        <span>{emp.position || '—'}</span>
+                        <span>{displayPosition}</span>
                       </div>
                       <div className="text-[11px] text-slate-500 flex items-center gap-1">
                         <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
-                        <span>{emp.department || '—'}</span>
+                        <span>{displayDepartment}</span>
                       </div>
                     </div>
                   </td>
@@ -414,13 +521,13 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
                   <td className="py-3 px-4 align-middle text-center">
                     <div className="flex flex-col items-center justify-center gap-1">
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide inline-block ${
-                        emp.status === 'ACTIVE'
+                        displayStatus === 'ACTIVE'
                           ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          : emp.status === 'RESIGNED'
+                          : displayStatus === 'RESIGNED'
                           ? 'bg-rose-100 text-rose-800 border border-rose-200'
                           : 'bg-amber-100 text-amber-800 border border-amber-200'
                       }`}>
-                        {emp.status || 'ACTIVE'}
+                        {displayStatus}
                       </span>
                       {(emp.status === 'RESIGNED' || emp.status === 'SEPARATED' || Boolean(emp.separationDate)) && emp.lastPayAmount ? (
                         <span className="text-[9px] font-extrabold text-amber-900 bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300">
@@ -472,61 +579,70 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
                     </div>
                   </td>
 
-                  {/* Action Buttons */}
-                  <td className="py-3 px-4 align-middle text-right" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-end gap-1">
+                  {/* STICKY ACTION BUTTONS: GUARANTEED 100% VISIBLE & NEVER CUT OFF */}
+                  <td 
+                    className="py-3 px-4 align-middle text-right sticky right-0 bg-white group-hover:bg-blue-50/95 border-l border-slate-200/80 z-10 shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.06)]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-end gap-1.5">
+                      {/* View Profile Button */}
                       <button
                         onClick={() => onViewEmployee(emp.id)}
-                        className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-100/70 rounded-lg transition-colors"
-                        title="View Employee Profile"
+                        className="w-7 h-7 flex items-center justify-center bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white rounded-lg transition-colors cursor-pointer"
+                        title="View Complete Employee 201 Profile"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-3.5 h-3.5" />
                       </button>
 
+                      {/* Verification Link */}
                       <button
                         onClick={() => {
                           const permKey = `${company}_${emp.empId || emp.id}`;
                           const url = `${window.location.origin}${window.location.pathname}?verify=${encodeURIComponent(permKey)}`;
                           window.open(url, '_blank');
                         }}
-                        className="w-8 h-8 flex items-center justify-center text-emerald-600 hover:bg-emerald-100/70 rounded-lg transition-colors"
+                        className="w-7 h-7 flex items-center justify-center bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white rounded-lg transition-colors cursor-pointer"
                         title="Open Permanent Public Verification Portal"
                       >
-                        <ShieldCheck className="w-4 h-4" />
+                        <ShieldCheck className="w-3.5 h-3.5" />
                       </button>
 
+                      {/* Digital ID Badge */}
                       {onOpenIdCard && (
                         <button
                           onClick={() => onOpenIdCard(emp)}
-                          className="w-8 h-8 flex items-center justify-center text-teal-600 hover:bg-teal-100/70 rounded-lg transition-colors"
+                          className="w-7 h-7 flex items-center justify-center bg-teal-50 hover:bg-teal-600 text-teal-700 hover:text-white rounded-lg transition-colors cursor-pointer"
                           title="View / Print Digital ID Badge"
                         >
-                          <CreditCard className="w-4 h-4" />
+                          <CreditCard className="w-3.5 h-3.5" />
                         </button>
                       )}
 
+                      {/* Print 201 */}
                       <button
                         onClick={() => onPrintEmployee(emp.id)}
-                        className="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-200/70 rounded-lg transition-colors"
-                        title="Print 201 Record"
+                        className="w-7 h-7 flex items-center justify-center bg-slate-100 hover:bg-slate-800 text-slate-700 hover:text-white rounded-lg transition-colors cursor-pointer"
+                        title="Print Official 201 Form"
                       >
-                        <Printer className="w-4 h-4" />
+                        <Printer className="w-3.5 h-3.5" />
                       </button>
 
+                      {/* Prominent EDIT Button */}
                       <button
                         onClick={() => onEditEmployee(emp.id)}
-                        className="w-8 h-8 flex items-center justify-center text-amber-600 hover:bg-amber-100/70 rounded-lg transition-colors"
-                        title={userRole === 'admin' ? "Edit Employee" : "View / Edit Employee (Admin restricted)"}
+                        className="w-7 h-7 flex items-center justify-center bg-amber-100 hover:bg-amber-500 text-amber-900 hover:text-white border border-amber-300 hover:border-amber-500 rounded-lg transition-colors shadow-2xs font-bold cursor-pointer"
+                        title={userRole === 'admin' ? "Edit Employee Information" : "View / Edit Employee (Admin restricted)"}
                       >
-                        <Edit3 className="w-4 h-4" />
+                        <Edit3 className="w-3.5 h-3.5" />
                       </button>
 
+                      {/* DELETE Button */}
                       <button
                         onClick={() => onDeleteEmployee(emp.id)}
-                        className="w-8 h-8 flex items-center justify-center text-rose-600 hover:bg-rose-100/70 rounded-lg transition-colors"
+                        className="w-7 h-7 flex items-center justify-center bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white rounded-lg transition-colors cursor-pointer"
                         title={userRole === 'admin' ? "Delete Employee Record" : "Delete Employee Record (Admin required)"}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </td>
@@ -544,7 +660,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
             {hasActiveFilters && (
               <button
                 onClick={handleResetFilters}
-                className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm"
+                className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
               >
                 Clear All Filters
               </button>
@@ -575,4 +691,3 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
     </div>
   );
 };
-

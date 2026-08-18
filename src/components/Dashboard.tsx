@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { CompanyKey, DocumentRequirement, Employee } from '../types';
 import { DEFAULT_REQUIREMENTS } from '../lib/db';
-import { getProbationaryStatus, checkDocumentExpiries, calculate201Completeness, checkMissingGovIds } from '../lib/hrUtils';
-import { Users, UserCheck, Briefcase, TrendingUp, Calendar, AlertTriangle, UserX, User, Cake, Award, ChevronDown, ChevronUp, Clock, AlertCircle, FileCheck, DollarSign, CheckCircle2, CreditCard } from 'lucide-react';
+import { getProbationaryStatus, checkDocumentExpiries, calculate201Completeness, checkMissingGovIds, getEmployeeTenure, getLastPaySchedules } from '../lib/hrUtils';
+import { Users, UserCheck, Briefcase, TrendingUp, Calendar, AlertTriangle, UserX, User, Cake, Award, ChevronDown, ChevronUp, Clock, AlertCircle, FileCheck, DollarSign, CheckCircle2, CreditCard, Sparkles } from 'lucide-react';
 
 interface DashboardProps {
   company: CompanyKey;
@@ -48,6 +48,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
       Boolean(e.resignationDate)
     )
   );
+
+  // 30-Day Last Pay Schedules
+  const lastPayList = getLastPaySchedules(empList);
+  const pendingLastPayCount = lastPayList.filter(x => x.status !== 'RELEASED').length;
+  const overdueLastPayCount = lastPayList.filter(x => x.isOverdue).length;
+
   const total = empList.length;
   const regular = active.filter(e => (e.classification || '').toLowerCase().includes('regular')).length;
   const probationary = active.filter(e => (e.classification || '').toLowerCase().includes('probationary')).length;
@@ -55,6 +61,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const inactive = empList.filter(e => e.status !== 'ACTIVE').length;
   const male = active.filter(e => e.gender === 'MALE').length;
   const female = active.filter(e => e.gender === 'FEMALE').length;
+
 
   // Compute Retention & Attrition Rates (Monthly Jan-Dec, Semi-Annual, Annual)
   const currentYear = new Date().getFullYear();
@@ -666,24 +673,135 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
+      {/* 30-Day Resigned / Separated Employee Last Pay Countdown Banner */}
+      {lastPayList.length > 0 && (
+        <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-amber-500/10 border-2 border-amber-400/80 rounded-2xl p-5 shadow-xs">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-amber-300/60">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-amber-500 text-white rounded-xl shadow-xs">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-black text-amber-950 text-sm tracking-tight">
+                    🗓️ 30-Day Resigned / Separated Employee Last Pay Schedule
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-200 text-amber-900 border border-amber-300">
+                    FINAL PAY COUNTDOWN
+                  </span>
+                </div>
+                <p className="text-xs text-amber-900 font-medium mt-0.5">
+                  DOLE-mandated 30-day final pay issuance tracking from separation date.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="px-3 py-1 bg-white border border-amber-300 rounded-xl text-xs font-black text-amber-950 shadow-2xs">
+                {pendingLastPayCount} Pending Release {overdueLastPayCount > 0 && <span className="text-rose-600">({overdueLastPayCount} Overdue)</span>}
+              </span>
+              <button
+                onClick={() => setShowSeparatedModal(true)}
+                className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold rounded-xl transition-all shadow-xs cursor-pointer"
+              >
+                View Full List ({lastPayList.length})
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Cards for Next Due Final Pays */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {lastPayList.slice(0, 3).map((item) => {
+              const emp = item.employee;
+              const isOverdue = item.isOverdue;
+              const isDueSoon = item.daysRemaining >= 0 && item.daysRemaining <= 7;
+              const amountFormatted = emp.lastPayAmount
+                ? `₱${Number(emp.lastPayAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+                : '₱0.00';
+
+              return (
+                <div
+                  key={emp.id}
+                  onClick={() => onViewEmployee(emp.id)}
+                  className={`p-3.5 rounded-xl border bg-white cursor-pointer hover:shadow-md transition-all flex flex-col justify-between gap-2.5 ${
+                    isOverdue
+                      ? 'border-rose-400 bg-rose-50/40'
+                      : isDueSoon
+                      ? 'border-amber-400 bg-amber-50/40'
+                      : 'border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="font-extrabold text-xs text-slate-900">
+                        {emp.lastName}, {emp.firstName}
+                      </h4>
+                      <p className="text-[10px] text-slate-500">
+                        {emp.position || 'Staff'} • {emp.department || 'Dept'} ({emp.empId})
+                      </p>
+                    </div>
+                    <span
+                      className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${
+                        isOverdue
+                          ? 'bg-rose-600 text-white animate-pulse'
+                          : isDueSoon
+                          ? 'bg-amber-500 text-white'
+                          : 'bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      {isOverdue ? '⚠️ Overdue' : `${item.daysRemaining}d left`}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 space-y-1 text-[10px]">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Separation Date:</span>
+                      <span className="font-mono font-bold text-slate-800">{item.separationDate || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Scheduled Pay Date:</span>
+                      <span className="font-mono font-bold text-blue-700">{item.scheduledPayDate}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                    <span className="text-[10px] font-black text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      {amountFormatted}
+                    </span>
+                    <span className="text-[10px] font-extrabold text-slate-600">
+                      {emp.lastPayStatus || 'PENDING'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Row 3: New Hires Accordion & Hiring Trend */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* New Employees */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
-          <h3 className="font-bold text-slate-900 text-sm mb-4 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-emerald-600" /> New Employees (1-6 Months)
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-emerald-600" /> New Employees & Exact Tenure (Days / Months)
+            </h3>
+            <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+              {newHiresG1.length + newHiresG2.length + newHiresG3.length} Total New Hires
+            </span>
+          </div>
 
           <div className="space-y-3">
             {/* G1: 0-1 month */}
             <div className="border border-slate-200 rounded-xl overflow-hidden">
               <button
                 onClick={() => setOpenGroup(openGroup === 'g1' ? null : 'g1')}
-                className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 text-left flex items-center justify-between font-bold text-xs text-slate-800"
+                className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 text-left flex items-center justify-between font-bold text-xs text-slate-800 cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                  <span>0 - 1 Month</span>
+                  <span>0 - 1 Month (Recent Hires)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[10px] font-bold text-slate-600">{newHiresG1.length}</span>
@@ -692,15 +810,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </button>
               {openGroup === 'g1' && (
                 <div className="p-3 bg-white space-y-2 border-t border-slate-200">
-                  {newHiresG1.map(e => (
-                    <div key={e.id} onClick={() => onViewEmployee(e.id)} className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-lg cursor-pointer text-xs">
-                      <div>
-                        <p className="font-bold text-slate-800">{e.firstName} {e.lastName}</p>
-                        <p className="text-[10px] text-slate-500">{e.position} • {e.department}</p>
+                  {newHiresG1.map(e => {
+                    const tenure = getEmployeeTenure(e.dateHired);
+                    return (
+                      <div key={e.id} onClick={() => onViewEmployee(e.id)} className="flex items-center justify-between p-2.5 hover:bg-emerald-50/50 rounded-xl cursor-pointer text-xs border border-slate-100 transition-colors">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-bold text-slate-900">{e.firstName} {e.lastName}</p>
+                            <span className="text-[9px] font-mono text-blue-700 bg-blue-50 px-1 rounded font-bold">
+                              {e.empId}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-500">{e.position || 'Staff'} • {e.department || 'Operations'}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-md text-[10px] font-extrabold block">
+                            ⏱️ {tenure ? tenure.formattedText : 'New'}
+                          </span>
+                          <span className="text-[9px] font-semibold text-slate-400 block mt-0.5">Hired: {e.dateHired}</span>
+                        </div>
                       </div>
-                      <span className="text-[10px] font-semibold text-slate-400">{e.dateHired}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {newHiresG1.length === 0 && <p className="text-[11px] text-slate-400 p-2 text-center">No new hires in 1 month.</p>}
                 </div>
               )}
@@ -710,7 +841,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="border border-slate-200 rounded-xl overflow-hidden">
               <button
                 onClick={() => setOpenGroup(openGroup === 'g2' ? null : 'g2')}
-                className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 text-left flex items-center justify-between font-bold text-xs text-slate-800"
+                className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 text-left flex items-center justify-between font-bold text-xs text-slate-800 cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
@@ -723,15 +854,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </button>
               {openGroup === 'g2' && (
                 <div className="p-3 bg-white space-y-2 border-t border-slate-200">
-                  {newHiresG2.map(e => (
-                    <div key={e.id} onClick={() => onViewEmployee(e.id)} className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-lg cursor-pointer text-xs">
-                      <div>
-                        <p className="font-bold text-slate-800">{e.firstName} {e.lastName}</p>
-                        <p className="text-[10px] text-slate-500">{e.position} • {e.department}</p>
+                  {newHiresG2.map(e => {
+                    const tenure = getEmployeeTenure(e.dateHired);
+                    return (
+                      <div key={e.id} onClick={() => onViewEmployee(e.id)} className="flex items-center justify-between p-2.5 hover:bg-blue-50/50 rounded-xl cursor-pointer text-xs border border-slate-100 transition-colors">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-bold text-slate-900">{e.firstName} {e.lastName}</p>
+                            <span className="text-[9px] font-mono text-blue-700 bg-blue-50 px-1 rounded font-bold">
+                              {e.empId}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-500">{e.position || 'Staff'} • {e.department || 'Operations'}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-900 border border-blue-300 rounded-md text-[10px] font-extrabold block">
+                            ⏱️ {tenure ? tenure.formattedText : '1-3m'}
+                          </span>
+                          <span className="text-[9px] font-semibold text-slate-400 block mt-0.5">Hired: {e.dateHired}</span>
+                        </div>
                       </div>
-                      <span className="text-[10px] font-semibold text-slate-400">{e.dateHired}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {newHiresG2.length === 0 && <p className="text-[11px] text-slate-400 p-2 text-center">No hires in 1-3 months.</p>}
                 </div>
               )}
@@ -741,7 +885,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="border border-slate-200 rounded-xl overflow-hidden">
               <button
                 onClick={() => setOpenGroup(openGroup === 'g3' ? null : 'g3')}
-                className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 text-left flex items-center justify-between font-bold text-xs text-slate-800"
+                className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 text-left flex items-center justify-between font-bold text-xs text-slate-800 cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
@@ -754,15 +898,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </button>
               {openGroup === 'g3' && (
                 <div className="p-3 bg-white space-y-2 border-t border-slate-200">
-                  {newHiresG3.map(e => (
-                    <div key={e.id} onClick={() => onViewEmployee(e.id)} className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-lg cursor-pointer text-xs">
-                      <div>
-                        <p className="font-bold text-slate-800">{e.firstName} {e.lastName}</p>
-                        <p className="text-[10px] text-slate-500">{e.position} • {e.department}</p>
+                  {newHiresG3.map(e => {
+                    const tenure = getEmployeeTenure(e.dateHired);
+                    return (
+                      <div key={e.id} onClick={() => onViewEmployee(e.id)} className="flex items-center justify-between p-2.5 hover:bg-amber-50/50 rounded-xl cursor-pointer text-xs border border-slate-100 transition-colors">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-bold text-slate-900">{e.firstName} {e.lastName}</p>
+                            <span className="text-[9px] font-mono text-blue-700 bg-blue-50 px-1 rounded font-bold">
+                              {e.empId}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-500">{e.position || 'Staff'} • {e.department || 'Operations'}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-md text-[10px] font-extrabold block">
+                            ⏱️ {tenure ? tenure.formattedText : '3-6m'}
+                          </span>
+                          <span className="text-[9px] font-semibold text-slate-400 block mt-0.5">Hired: {e.dateHired}</span>
+                        </div>
                       </div>
-                      <span className="text-[10px] font-semibold text-slate-400">{e.dateHired}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {newHiresG3.length === 0 && <p className="text-[11px] text-slate-400 p-2 text-center">No hires in 3-6 months.</p>}
                 </div>
               )}

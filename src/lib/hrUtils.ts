@@ -119,6 +119,128 @@ export interface DocumentExpiryAlert {
   status: 'EXPIRED' | 'EXPIRING_SOON' | 'VALID';
 }
 
+export interface EmployeeTenure {
+  hiredDate: string;
+  days: number;
+  months: number;
+  years: number;
+  formattedText: string;
+  isNewHire: boolean; // hired within last 90 days / 3 months
+}
+
+export function getEmployeeTenure(dateHiredStr?: string): EmployeeTenure | null {
+  if (!dateHiredStr) return null;
+  const hiredDate = new Date(dateHiredStr);
+  if (isNaN(hiredDate.getTime())) return null;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const diffMs = today.getTime() - hiredDate.getTime();
+  if (diffMs < 0) {
+    return {
+      hiredDate: dateHiredStr,
+      days: 0,
+      months: 0,
+      years: 0,
+      formattedText: 'Starts in future',
+      isNewHire: true,
+    };
+  }
+
+  const totalDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  let years = today.getFullYear() - hiredDate.getFullYear();
+  let months = today.getMonth() - hiredDate.getMonth();
+  let days = today.getDate() - hiredDate.getDate();
+
+  if (days < 0) {
+    months -= 1;
+    // days in previous month
+    const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+    days += prevMonth.getDate();
+  }
+
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+
+  let formattedText = '';
+  if (years > 0) {
+    formattedText = `${years}y ${months}m (${totalDays} days)`;
+  } else if (months > 0) {
+    formattedText = `${months} ${months === 1 ? 'Month' : 'Months'} ${days > 0 ? `${days}d` : ''} (${totalDays} days)`;
+  } else {
+    formattedText = `${totalDays} ${totalDays === 1 ? 'Day' : 'Days'}`;
+  }
+
+  return {
+    hiredDate: dateHiredStr,
+    days: totalDays,
+    months: years * 12 + months,
+    years,
+    formattedText: formattedText.trim(),
+    isNewHire: totalDays <= 90, // hired within 90 days
+  };
+}
+
+export interface LastPayScheduleItem {
+  employee: Employee;
+  separationDate: string;
+  scheduledPayDate: string;
+  daysRemaining: number;
+  isOverdue: boolean;
+  status: string;
+  amount?: string | number;
+}
+
+export function getLastPaySchedules(employees: Employee[]): LastPayScheduleItem[] {
+  const list: LastPayScheduleItem[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  (employees || []).forEach(emp => {
+    if (!emp) return;
+    const isSeparated = emp.status === 'RESIGNED' || emp.status === 'SEPARATED' || Boolean(emp.separationDate);
+    if (!isSeparated) return;
+
+    const sepDateStr = emp.separationDate;
+    let targetPayDate: Date;
+
+    if (emp.lastPayScheduleDate) {
+      targetPayDate = new Date(emp.lastPayScheduleDate);
+    } else if (sepDateStr) {
+      const sepD = new Date(sepDateStr);
+      if (!isNaN(sepD.getTime())) {
+        targetPayDate = new Date(sepD);
+        targetPayDate.setDate(targetPayDate.getDate() + 30); // 30-day DOLE rule
+      } else {
+        return;
+      }
+    } else {
+      return;
+    }
+
+    if (isNaN(targetPayDate.getTime())) return;
+
+    const diffMs = targetPayDate.getTime() - today.getTime();
+    const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    list.push({
+      employee: emp,
+      separationDate: sepDateStr || '',
+      scheduledPayDate: targetPayDate.toISOString().split('T')[0],
+      daysRemaining,
+      isOverdue: daysRemaining < 0 && emp.lastPayStatus !== 'RELEASED',
+      status: emp.lastPayStatus || 'PENDING',
+      amount: emp.lastPayAmount,
+    });
+  });
+
+  return list.sort((a, b) => a.daysRemaining - b.daysRemaining);
+}
+
 export function checkDocumentExpiries(
   employees: Employee[],
   requirements: DocumentRequirement[]

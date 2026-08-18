@@ -30,20 +30,93 @@ export const EmployeePrintModal: React.FC<EmployeePrintModalProps> = ({
   const docs = employee.documents || {};
 
   const handlePrintDocument = () => {
+    // 1. First try hidden iframe printing which works seamlessly without modal clipping or iframe parent issues
+    try {
+      const sheetEl = document.querySelector('.print-document-sheet');
+      if (sheetEl) {
+        // Create or reuse hidden print iframe
+        let printIframe = document.getElementById('hris-print-iframe') as HTMLIFrameElement;
+        if (!printIframe) {
+          printIframe = document.createElement('iframe');
+          printIframe.id = 'hris-print-iframe';
+          printIframe.style.position = 'fixed';
+          printIframe.style.right = '0';
+          printIframe.style.bottom = '0';
+          printIframe.style.width = '0';
+          printIframe.style.height = '0';
+          printIframe.style.border = '0';
+          document.body.appendChild(printIframe);
+        }
+
+        const iframeDoc = printIframe.contentWindow?.document || printIframe.contentDocument;
+        if (iframeDoc) {
+          iframeDoc.open();
+          iframeDoc.write(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <title>${employee.lastName}, ${employee.firstName} - 201 Record</title>
+                <meta charset="utf-8">
+                <script src="https://cdn.tailwindcss.com"></script>
+                <style>
+                  @page { size: A4 portrait; margin: 8mm 8mm; }
+                  body {
+                    background: #ffffff !important;
+                    color: #000000 !important;
+                    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                    margin: 0;
+                    padding: 4px;
+                    font-size: 11px;
+                  }
+                  .break-inside-avoid, .avoid-page-break {
+                    page-break-inside: avoid !important;
+                    break-inside: avoid !important;
+                  }
+                  table { width: 100%; border-collapse: collapse; }
+                  th, td { border: 1px solid #cbd5e1; }
+                </style>
+              </head>
+              <body class="p-2 text-slate-900 bg-white">
+                ${sheetEl.innerHTML}
+              </body>
+            </html>
+          `);
+          iframeDoc.close();
+
+          setTimeout(() => {
+            try {
+              printIframe.contentWindow?.focus();
+              printIframe.contentWindow?.print();
+              onToast('Print dialog opened. Select "Save as PDF" or your printer.', 'success');
+              return;
+            } catch (iframePrintErr) {
+              console.warn('Iframe print fallback to window.print():', iframePrintErr);
+              window.print();
+            }
+          }, 500);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Hidden iframe print failed, falling back to window.print():', e);
+    }
+
     try {
       window.print();
     } catch (err) {
       console.error('Print failed:', err);
-      onToast('Error initiating print dialog. Please use standard Ctrl+P / Cmd+P shortcut.', 'error');
+      onToast('Error initiating print. Please use Ctrl+P or the Pop-out Window button.', 'error');
     }
   };
 
   const handleOpenPrintWindow = () => {
     const sheetEl = document.querySelector('.print-document-sheet');
     if (!sheetEl) return;
-    const printWin = window.open('', '_blank', 'width=900,height=1000');
+    const printWin = window.open('', '_blank', 'width=950,height=1050');
     if (!printWin) {
-      onToast('Popup blocked! Please allow popups for this site or press Ctrl+P.', 'warning');
+      onToast('Popup blocked! Please allow popups for this site or use the Print button.', 'warning');
       return;
     }
     printWin.document.write(`
@@ -51,14 +124,39 @@ export const EmployeePrintModal: React.FC<EmployeePrintModalProps> = ({
       <html>
         <head>
           <title>${employee.lastName}, ${employee.firstName} - 201 Record</title>
+          <meta charset="utf-8">
           <script src="https://cdn.tailwindcss.com"></script>
           <style>
+            @page { size: A4 portrait; margin: 8mm 8mm; }
+            body {
+              background: #ffffff !important;
+              color: #000000 !important;
+              font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              margin: 0;
+              padding: 16px;
+              font-size: 11.5px;
+            }
+            .break-inside-avoid, .avoid-page-break {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #cbd5e1; }
             @media print {
-              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              .no-print-window-bar { display: none !important; }
+              body { padding: 0 !important; }
             }
           </style>
         </head>
-        <body class="bg-white p-8 font-sans text-slate-900">
+        <body class="bg-white p-6 font-sans text-slate-900">
+          <div class="no-print-window-bar mb-4 p-3 bg-slate-800 text-white rounded-xl flex items-center justify-between shadow-lg">
+            <span class="text-xs font-bold">201 Print Preview — ${employee.lastName}, ${employee.firstName}</span>
+            <button onclick="window.print()" style="cursor:pointer; background:#2563eb; color:#fff; font-weight:bold; padding:6px 14px; border-radius:8px; border:none; font-size:12px;">
+              🖨️ Click to Print / Save as PDF
+            </button>
+          </div>
           ${sheetEl.innerHTML}
         </body>
       </html>
@@ -67,7 +165,7 @@ export const EmployeePrintModal: React.FC<EmployeePrintModalProps> = ({
     printWin.focus();
     setTimeout(() => {
       printWin.print();
-    }, 700);
+    }, 600);
   };
 
   return (
@@ -227,14 +325,16 @@ export const EmployeePrintModal: React.FC<EmployeePrintModalProps> = ({
           {/* Active Government Loans (if present) */}
           {employee.govLoans && employee.govLoans.length > 0 && (
             <div className="mb-4 space-y-1.5 text-xs avoid-page-break break-inside-avoid">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-0.5">Active Government & Company Loans</h3>
+              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-0.5">Government & Mandated Loan Deductions</h3>
               <table className="w-full text-left text-[10.5px] border border-slate-200">
                 <thead>
                   <tr className="bg-slate-100 text-slate-700 border-b">
-                    <th className="p-1 font-bold">Loan Type & Ref #</th>
-                    <th className="p-1 font-bold">Principal Amount</th>
+                    <th className="p-1 font-bold">Loan Type</th>
+                    <th className="p-1 font-bold">Total Loan Amount</th>
                     <th className="p-1 font-bold">Monthly Deduction</th>
-                    <th className="p-1 font-bold">Start - End Date</th>
+                    <th className="p-1 font-bold">Start of Deduction</th>
+                    <th className="p-1 font-bold">End of Deduction</th>
+                    <th className="p-1 font-bold">Document Attachment</th>
                     <th className="p-1 font-bold">Status</th>
                   </tr>
                 </thead>
@@ -243,11 +343,23 @@ export const EmployeePrintModal: React.FC<EmployeePrintModalProps> = ({
                     <tr key={loan.id} className="border-b">
                       <td className="p-1">
                         <div className="font-bold">{loan.type}</div>
-                        <div className="text-[10px] text-slate-500 font-mono">Ref: {loan.referenceNo || 'N/A'}</div>
+                        {loan.customType && loan.customType !== loan.type && (
+                          <div className="text-[9.5px] text-indigo-700 font-semibold">{loan.customType}</div>
+                        )}
                       </td>
                       <td className="p-1 font-mono">₱{Number(loan.loanAmount || 0).toLocaleString()}</td>
-                      <td className="p-1 font-mono font-bold text-rose-700">₱{Number(loan.monthlyDeduction || 0).toLocaleString()}</td>
-                      <td className="p-1 whitespace-nowrap">{loan.startDate} to {loan.endDate || 'Active'}</td>
+                      <td className="p-1 font-mono font-bold text-rose-700">₱{Number(loan.monthlyDeduction || 0).toLocaleString()} / mo</td>
+                      <td className="p-1 font-semibold">{loan.startDate || '—'}</td>
+                      <td className="p-1 font-semibold">{loan.endDate || 'Ongoing'}</td>
+                      <td className="p-1">
+                        {loan.filename || loan.dataUrl || loan.fileId ? (
+                          <span className="text-[9.5px] font-semibold text-emerald-700">
+                            ✓ {loan.filename || 'Attached PDF/Doc'}
+                          </span>
+                        ) : (
+                          <span className="text-[9.5px] text-slate-400 italic">None attached</span>
+                        )}
+                      </td>
                       <td className="p-1">
                         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
                           {loan.status}

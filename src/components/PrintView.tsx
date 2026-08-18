@@ -126,14 +126,16 @@ export const PrintView: React.FC<PrintViewProps> = ({ company, employee, require
       {/* Active Government Loans (if present) */}
       {employee.govLoans && employee.govLoans.length > 0 && (
         <div className="mb-4 space-y-1.5 text-xs avoid-page-break break-inside-avoid">
-          <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-0.5">Active Government & Company Loans</h3>
+          <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-0.5">Government & Mandated Loan Deductions</h3>
           <table className="w-full text-left text-[10.5px] border border-slate-200">
             <thead>
               <tr className="bg-slate-100 text-slate-700 border-b">
-                <th className="p-1 font-bold">Loan Type & Ref #</th>
-                <th className="p-1 font-bold">Principal Amount</th>
+                <th className="p-1 font-bold">Loan Type</th>
+                <th className="p-1 font-bold">Total Loan Amount</th>
                 <th className="p-1 font-bold">Monthly Deduction</th>
-                <th className="p-1 font-bold">Start - End Date</th>
+                <th className="p-1 font-bold">Start of Deduction</th>
+                <th className="p-1 font-bold">End of Deduction</th>
+                <th className="p-1 font-bold">Document Attachment</th>
                 <th className="p-1 font-bold">Status</th>
               </tr>
             </thead>
@@ -142,11 +144,23 @@ export const PrintView: React.FC<PrintViewProps> = ({ company, employee, require
                 <tr key={loan.id} className="border-b">
                   <td className="p-1">
                     <div className="font-bold">{loan.type}</div>
-                    <div className="text-[10px] text-slate-500 font-mono">Ref: {loan.referenceNo || 'N/A'}</div>
+                    {loan.customType && loan.customType !== loan.type && (
+                      <div className="text-[9.5px] text-indigo-700 font-semibold">{loan.customType}</div>
+                    )}
                   </td>
                   <td className="p-1 font-mono">₱{(loan.loanAmount || 0).toLocaleString()}</td>
-                  <td className="p-1 font-mono font-bold text-rose-700">₱{(loan.monthlyDeduction || 0).toLocaleString()}</td>
-                  <td className="p-1 whitespace-nowrap">{loan.startDate} to {loan.endDate || 'Active'}</td>
+                  <td className="p-1 font-mono font-bold text-rose-700">₱{(loan.monthlyDeduction || 0).toLocaleString()} / mo</td>
+                  <td className="p-1 font-semibold">{loan.startDate || '—'}</td>
+                  <td className="p-1 font-semibold">{loan.endDate || 'Ongoing'}</td>
+                  <td className="p-1">
+                    {loan.filename || loan.dataUrl || loan.fileId ? (
+                      <span className="text-[9.5px] font-semibold text-emerald-700">
+                        ✓ {loan.filename || 'Attached PDF/Doc'}
+                      </span>
+                    ) : (
+                      <span className="text-[9.5px] text-slate-400 italic">None attached</span>
+                    )}
+                  </td>
                   <td className="p-1">
                     <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
                       {loan.status}

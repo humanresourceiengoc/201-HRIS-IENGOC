@@ -81,12 +81,13 @@ export interface DocumentExpiryRecord {
 
 export interface GovLoanRecord {
   id: string;
-  type: 'SSS Salary Loan' | 'SSS Calamity Loan' | 'Pag-IBIG Multi-Purpose Loan (MPL)' | 'Pag-IBIG Calamity Loan' | 'Company Salary Loan' | 'Emergency Loan' | string;
+  type: string; // SSS Salary Loan, Pag-IBIG Calamity Loan, Custom Mandate Loan, or custom entered loan type
+  customType?: string;
   referenceNo?: string;
   loanAmount: number;
   monthlyDeduction: number; // Custom monthly deduction amount
-  startDate: string;
-  endDate?: string;
+  startDate: string; // Start of Deduction
+  endDate?: string; // End of Deduction
   status: 'ACTIVE' | 'FULLY_PAID' | 'ON_HOLD';
   remarks?: string;
   filename?: string;

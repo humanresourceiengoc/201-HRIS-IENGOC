@@ -8,7 +8,7 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 4mm 5mm;
+    margin: 8mm 8mm;
   }
 
   /* Force clean white print background */
@@ -25,7 +25,7 @@
     print-color-adjust: exact !important;
   }
 
-  /* Hide navigation, sidebars, buttons, modal overlays, and print:hidden elements */
+  /* Hide screen-only navigation, sidebars, buttons, toasts, and no-print elements */
   header,
   aside,
   nav,
@@ -35,20 +35,36 @@
     display: none !important;
   }
 
-  /* Hide fixed modal backdrop overlays and non-print dialogs */
+  /* Hide modal backdrop overlays so they don't block or stretch print pages */
+  .fixed.inset-0:not(:has(.print-document-sheet)) {
+    display: none !important;
+  }
+
   .bg-slate-900\/80,
   .bg-slate-900\/90,
+  .bg-slate-900\/60,
   .bg-black\/50,
   .backdrop-blur-sm,
-  .backdrop-blur-xs,
-  .fixed.inset-0 {
+  .backdrop-blur-xs {
     background: transparent !important;
     backdrop-filter: none !important;
     box-shadow: none !important;
   }
 
-  /* Show print-only containers cleanly on page */
-  .print-only,
+  /* If EmployeePrintModal is open, only print .print-document-sheet and hide .print-only to avoid duplicate printouts */
+  body:has(.print-document-sheet) .print-only {
+    display: none !important;
+  }
+
+  /* If EmployeePrintModal is NOT open, show .print-only */
+  body:not(:has(.print-document-sheet)) .print-only {
+    display: block !important;
+    visibility: visible !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
   .print-document-sheet {
     display: block !important;
     visibility: visible !important;
@@ -60,6 +76,8 @@
     background: #ffffff !important;
     color: #000000 !important;
     overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
   }
 
   .print-only *,
@@ -84,8 +102,7 @@
   /* Clean print section margins */
   .print-document-sheet section,
   .print-document-sheet > div {
-    page-break-inside: avoid;
-    break-inside: avoid;
+    page-break-inside: auto;
   }
 }
 

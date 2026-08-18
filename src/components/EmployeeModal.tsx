@@ -76,14 +76,16 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     issuedBy: 'HR Department'
   });
 
-  // Gov Mandated Loans with Custom Monthly Deduction & PDF/File Attachment
+  // Gov Mandated Loans with Custom Monthly Deduction, Start & End of Deduction, and PDF/File Attachment
   const [showLoanModal, setShowLoanModal] = useState<boolean>(false);
+  const [isCustomLoanType, setIsCustomLoanType] = useState<boolean>(false);
   const [loanForm, setLoanForm] = useState<{
     type: string;
-    referenceNo: string;
+    customType: string;
     loanAmount: string;
     monthlyDeduction: string;
-    startDate: string;
+    startDate: string; // Start of Deduction
+    endDate: string; // End of Deduction
     status: 'ACTIVE' | 'FULLY_PAID' | 'ON_HOLD';
     remarks: string;
     filename?: string;
@@ -92,10 +94,11 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     mimeType?: string;
   }>({
     type: 'SSS Salary Loan',
-    referenceNo: '',
+    customType: '',
     loanAmount: '',
     monthlyDeduction: '',
     startDate: new Date().toISOString().split('T')[0],
+    endDate: '',
     status: 'ACTIVE',
     remarks: ''
   });
@@ -541,18 +544,29 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     const loanAmountNum = parseFloat(loanForm.loanAmount) || 0;
     const monthlyDedNum = parseFloat(loanForm.monthlyDeduction) || 0;
 
-    if (!loanForm.type.trim() || monthlyDedNum <= 0) {
-      onToast('Please provide loan type and a valid custom monthly deduction amount.', 'error');
+    // Resolve final loan type (either selected standard or custom typed name)
+    const finalLoanType = (loanForm.type === 'CUSTOM' || loanForm.type === 'Custom Mandate Loan' || isCustomLoanType)
+      ? (loanForm.customType.trim() || 'Custom Mandate Loan')
+      : loanForm.type.trim();
+
+    if (!finalLoanType || monthlyDedNum <= 0) {
+      onToast('Please provide a loan type and a valid custom monthly deduction amount.', 'error');
+      return;
+    }
+
+    if (!loanForm.startDate) {
+      onToast('Please provide the Start Date of Deduction.', 'error');
       return;
     }
 
     const newLoan: GovLoanRecord = {
       id: `loan_${Date.now()}`,
-      type: loanForm.type,
-      referenceNo: loanForm.referenceNo || `REF-${Math.floor(1000 + Math.random() * 9000)}`,
+      type: finalLoanType,
+      customType: loanForm.customType.trim() || undefined,
       loanAmount: loanAmountNum,
       monthlyDeduction: monthlyDedNum,
       startDate: loanForm.startDate,
+      endDate: loanForm.endDate || undefined,
       status: loanForm.status,
       remarks: loanForm.remarks || 'Custom monthly deduction setup by HR',
       filename: loanForm.filename,
@@ -568,12 +582,14 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     }));
 
     setShowLoanModal(false);
+    setIsCustomLoanType(false);
     setLoanForm({
       type: 'SSS Salary Loan',
-      referenceNo: '',
+      customType: '',
       loanAmount: '',
       monthlyDeduction: '',
       startDate: new Date().toISOString().split('T')[0],
+      endDate: '',
       status: 'ACTIVE',
       remarks: '',
       filename: undefined,
@@ -581,7 +597,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
       fileId: undefined,
       mimeType: undefined
     });
-    onToast(`Added Gov Mandate Loan (${loanForm.type}) with custom monthly deduction of ₱${monthlyDedNum.toLocaleString()}!`, 'success');
+    onToast(`Added Loan (${finalLoanType}) with monthly deduction of ₱${monthlyDedNum.toLocaleString()} every month!`, 'success');
   };
 
   // Delete Gov Loan
@@ -1741,10 +1757,10 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold text-[10px] uppercase">
                         <th className="py-2 px-3">Loan Type</th>
-                        <th className="py-2 px-3">Reference No.</th>
                         <th className="py-2 px-3">Loan Amount</th>
-                        <th className="py-2 px-3">Custom Monthly Deduction</th>
-                        <th className="py-2 px-3">Start Date</th>
+                        <th className="py-2 px-3">Monthly Deduction (Every Month)</th>
+                        <th className="py-2 px-3">Start of Deduction</th>
+                        <th className="py-2 px-3">End of Deduction</th>
                         <th className="py-2 px-3">Status</th>
                         <th className="py-2 px-3">Attached Document</th>
                         <th className="py-2 px-3">Remarks</th>
@@ -1758,15 +1774,20 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
 
                         return (
                           <tr key={loan.id} className="hover:bg-slate-50">
-                            <td className="py-2.5 px-3 font-bold text-slate-900">{loan.type}</td>
-                            <td className="py-2.5 px-3 font-mono text-slate-600">{loan.referenceNo || '—'}</td>
+                            <td className="py-2.5 px-3">
+                              <div className="font-bold text-slate-900">{loan.type}</div>
+                              {loan.customType && loan.customType !== loan.type && (
+                                <div className="text-[10px] text-indigo-600 font-medium">{loan.customType}</div>
+                              )}
+                            </td>
                             <td className="py-2.5 px-3 text-slate-700 font-semibold">₱{Number(loan.loanAmount || 0).toLocaleString()}</td>
                             <td className="py-2.5 px-3">
                               <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
                                 ₱{Number(loan.monthlyDeduction || 0).toLocaleString()} / mo
                               </span>
                             </td>
-                            <td className="py-2.5 px-3 text-slate-600">{loan.startDate}</td>
+                            <td className="py-2.5 px-3 font-semibold text-slate-800">{loan.startDate || '—'}</td>
+                            <td className="py-2.5 px-3 font-semibold text-slate-600">{loan.endDate || 'Ongoing'}</td>
                             <td className="py-2.5 px-3">
                               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                                 loan.status === 'ACTIVE'
@@ -1784,7 +1805,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                                   type="button"
                                   onClick={() => setActiveViewer({
                                     isOpen: true,
-                                    title: `${loan.type} Document (${loan.referenceNo || 'Loan'})`,
+                                    title: `${loan.type} Document`,
                                     filename: loan.filename || 'loan_document.pdf',
                                     fileIdOrUrl: loan.dataUrl || loan.fileId,
                                     mimeType: loan.mimeType || 'application/pdf',
@@ -3096,41 +3117,82 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 uppercase mb-1">Loan Type *</label>
-                <select
-                  value={loanForm.type}
-                  onChange={(e) => setLoanForm(prev => ({ ...prev, type: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl outline-none font-semibold"
-                >
-                  <option value="SSS Salary Loan">SSS Salary Loan</option>
-                  <option value="SSS Calamity Loan">SSS Calamity Loan</option>
-                  <option value="Pag-IBIG Multi-Purpose Loan (MPL)">Pag-IBIG Multi-Purpose Loan (MPL)</option>
-                  <option value="Pag-IBIG Calamity Loan">Pag-IBIG Calamity Loan</option>
-                  <option value="Company Salary Loan">Company Salary Loan</option>
-                  <option value="Emergency Loan">Emergency Loan</option>
-                  <option value="Custom Mandate Loan">Custom Mandate Loan</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block font-bold text-slate-700 uppercase mb-1">Reference / SSS/PGB No.</label>
+                <label className="block font-bold text-slate-700 uppercase mb-1 flex items-center justify-between">
+                  <span>Loan Type *</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCustomLoanType(!isCustomLoanType);
+                      if (!isCustomLoanType) {
+                        setLoanForm(prev => ({ ...prev, type: 'Custom Mandate Loan' }));
+                      }
+                    }}
+                    className="text-[10.5px] text-indigo-600 hover:text-indigo-800 font-bold hover:underline"
+                  >
+                    {isCustomLoanType ? '← Select Standard Loan' : '+ Type Custom Loan Name'}
+                  </button>
+                </label>
+                {isCustomLoanType ? (
                   <input
                     type="text"
-                    placeholder="e.g. SSS-SL-2026-889"
-                    value={loanForm.referenceNo}
-                    onChange={(e) => setLoanForm(prev => ({ ...prev, referenceNo: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl outline-none"
+                    placeholder="Enter custom loan type (e.g. SSS Calamity, Equipment Loan, Car Loan)..."
+                    value={loanForm.customType}
+                    onChange={(e) => setLoanForm(prev => ({ ...prev, customType: e.target.value, type: e.target.value || 'Custom Mandate Loan' }))}
+                    className="w-full px-3 py-2 border-2 border-indigo-300 rounded-xl outline-none font-bold text-slate-900 bg-indigo-50/30"
+                    autoFocus
                   />
-                </div>
+                ) : (
+                  <select
+                    value={loanForm.type}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === 'CUSTOM') {
+                        setIsCustomLoanType(true);
+                        setLoanForm(prev => ({ ...prev, type: 'Custom Mandate Loan' }));
+                      } else {
+                        setLoanForm(prev => ({ ...prev, type: val }));
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl outline-none font-semibold"
+                  >
+                    <option value="SSS Salary Loan">SSS Salary Loan</option>
+                    <option value="SSS Calamity Loan">SSS Calamity Loan</option>
+                    <option value="Pag-IBIG Multi-Purpose Loan (MPL)">Pag-IBIG Multi-Purpose Loan (MPL)</option>
+                    <option value="Pag-IBIG Calamity Loan">Pag-IBIG Calamity Loan</option>
+                    <option value="Pag-IBIG Housing Loan">Pag-IBIG Housing Loan</option>
+                    <option value="Company Salary Loan">Company Salary Loan</option>
+                    <option value="Emergency Loan">Emergency Loan</option>
+                    <option value="Uniform / Cash Advance Loan">Uniform / Cash Advance Loan</option>
+                    <option value="CUSTOM">+ Add Customize Loan Type...</option>
+                  </select>
+                )}
+              </div>
+
+              {/* Start of Deduction and End of Deduction (Replacing Reference No) */}
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-bold text-slate-700 uppercase mb-1">Start Date *</label>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">
+                    Start of Deduction *
+                  </label>
                   <input
                     type="date"
                     value={loanForm.startDate}
                     onChange={(e) => setLoanForm(prev => ({ ...prev, startDate: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl outline-none"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl outline-none font-semibold"
                   />
+                  <p className="text-[10px] text-slate-500 mt-0.5">First month of deduction</p>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">
+                    End of Deduction
+                  </label>
+                  <input
+                    type="date"
+                    value={loanForm.endDate}
+                    onChange={(e) => setLoanForm(prev => ({ ...prev, endDate: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl outline-none font-semibold"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-0.5">Optional end date / final amortization</p>
                 </div>
               </div>
 
@@ -3154,7 +3216,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                     onChange={(e) => setLoanForm(prev => ({ ...prev, monthlyDeduction: e.target.value }))}
                     className="w-full px-3 py-2 border-2 border-amber-300 bg-amber-50/40 rounded-xl outline-none font-bold text-slate-900"
                   />
-                  <p className="text-[10px] text-slate-500 mt-0.5">Custom editable monthly salary deduction</p>
+                  <p className="text-[10px] text-amber-800 font-bold mt-0.5">Deducts every month in custom deduction</p>
                 </div>
               </div>
 

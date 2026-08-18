@@ -76,7 +76,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     issuedBy: 'HR Department'
   });
 
-  // Gov Mandated Loans with Custom Monthly Deduction
+  // Gov Mandated Loans with Custom Monthly Deduction & PDF/File Attachment
   const [showLoanModal, setShowLoanModal] = useState<boolean>(false);
   const [loanForm, setLoanForm] = useState<{
     type: string;
@@ -86,6 +86,10 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     startDate: string;
     status: 'ACTIVE' | 'FULLY_PAID' | 'ON_HOLD';
     remarks: string;
+    filename?: string;
+    dataUrl?: string;
+    fileId?: string;
+    mimeType?: string;
   }>({
     type: 'SSS Salary Loan',
     referenceNo: '',
@@ -512,6 +516,26 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     onToast(`Issued Memo #${memoNo} successfully!`, 'success');
   };
 
+  // Loan Document / PDF Attachment Upload Handler
+  const handleLoanFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const fileRes = await saveFileToStorage(file, file.name);
+      setLoanForm(prev => ({
+        ...prev,
+        filename: file.name,
+        dataUrl: fileRes.dataUrl || fileRes.url,
+        fileId: fileRes.fileId,
+        mimeType: file.type || 'application/pdf'
+      }));
+      onToast(`Attached loan document: ${file.name}`, 'info');
+    } catch (err: any) {
+      onToast('Failed to attach loan document.', 'error');
+    }
+  };
+
   // Save Government Loan / Mandate Deduction
   const handleSaveLoan = () => {
     const loanAmountNum = parseFloat(loanForm.loanAmount) || 0;
@@ -530,7 +554,11 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
       monthlyDeduction: monthlyDedNum,
       startDate: loanForm.startDate,
       status: loanForm.status,
-      remarks: loanForm.remarks || 'Custom monthly deduction setup by HR'
+      remarks: loanForm.remarks || 'Custom monthly deduction setup by HR',
+      filename: loanForm.filename,
+      dataUrl: loanForm.dataUrl,
+      fileId: loanForm.fileId,
+      mimeType: loanForm.mimeType
     };
 
     const updatedLoans = [newLoan, ...(formData.govLoans || [])];
@@ -547,7 +575,11 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
       monthlyDeduction: '',
       startDate: new Date().toISOString().split('T')[0],
       status: 'ACTIVE',
-      remarks: ''
+      remarks: '',
+      filename: undefined,
+      dataUrl: undefined,
+      fileId: undefined,
+      mimeType: undefined
     });
     onToast(`Added Gov Mandate Loan (${loanForm.type}) with custom monthly deduction of ₱${monthlyDedNum.toLocaleString()}!`, 'success');
   };
@@ -1714,48 +1746,81 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                         <th className="py-2 px-3">Custom Monthly Deduction</th>
                         <th className="py-2 px-3">Start Date</th>
                         <th className="py-2 px-3">Status</th>
+                        <th className="py-2 px-3">Attached Document</th>
                         <th className="py-2 px-3">Remarks</th>
                         {!isReadOnly && <th className="py-2 px-3 text-right">Action</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {formData.govLoans.map((loan) => (
-                        <tr key={loan.id} className="hover:bg-slate-50">
-                          <td className="py-2.5 px-3 font-bold text-slate-900">{loan.type}</td>
-                          <td className="py-2.5 px-3 font-mono text-slate-600">{loan.referenceNo || '—'}</td>
-                          <td className="py-2.5 px-3 text-slate-700 font-semibold">₱{Number(loan.loanAmount || 0).toLocaleString()}</td>
-                          <td className="py-2.5 px-3">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
-                              ₱{Number(loan.monthlyDeduction || 0).toLocaleString()} / mo
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3 text-slate-600">{loan.startDate}</td>
-                          <td className="py-2.5 px-3">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              loan.status === 'ACTIVE'
-                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                                : loan.status === 'FULLY_PAID'
-                                ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                                : 'bg-slate-100 text-slate-600'
-                            }`}>
-                              {loan.status}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3 text-slate-500 text-[11px] max-w-[180px] truncate">{loan.remarks || '—'}</td>
-                          {!isReadOnly && (
-                            <td className="py-2.5 px-3 text-right">
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteLoan(loan.id)}
-                                className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                                title="Remove Loan Record"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                      {formData.govLoans.map((loan) => {
+                        const hasAttachedDoc = Boolean(loan.filename || loan.dataUrl || loan.fileId);
+                        const isPdf = loan.filename?.toLowerCase().endsWith('.pdf') || loan.mimeType?.includes('pdf');
+
+                        return (
+                          <tr key={loan.id} className="hover:bg-slate-50">
+                            <td className="py-2.5 px-3 font-bold text-slate-900">{loan.type}</td>
+                            <td className="py-2.5 px-3 font-mono text-slate-600">{loan.referenceNo || '—'}</td>
+                            <td className="py-2.5 px-3 text-slate-700 font-semibold">₱{Number(loan.loanAmount || 0).toLocaleString()}</td>
+                            <td className="py-2.5 px-3">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                                ₱{Number(loan.monthlyDeduction || 0).toLocaleString()} / mo
+                              </span>
                             </td>
-                          )}
-                        </tr>
-                      ))}
+                            <td className="py-2.5 px-3 text-slate-600">{loan.startDate}</td>
+                            <td className="py-2.5 px-3">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                loan.status === 'ACTIVE'
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                  : loan.status === 'FULLY_PAID'
+                                  ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                  : 'bg-slate-100 text-slate-600'
+                              }`}>
+                                {loan.status}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3">
+                              {hasAttachedDoc ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveViewer({
+                                    isOpen: true,
+                                    title: `${loan.type} Document (${loan.referenceNo || 'Loan'})`,
+                                    filename: loan.filename || 'loan_document.pdf',
+                                    fileIdOrUrl: loan.dataUrl || loan.fileId,
+                                    mimeType: loan.mimeType || 'application/pdf',
+                                    notes: loan.remarks
+                                  })}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-[11px] font-bold text-indigo-700 transition-colors shadow-2xs group max-w-[150px] truncate"
+                                  title={`View/Open: ${loan.filename || 'Loan Document'}`}
+                                >
+                                  {isPdf ? (
+                                    <FileText className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                                  ) : (
+                                    <Paperclip className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                  )}
+                                  <span className="truncate">{loan.filename || 'View PDF'}</span>
+                                  <Eye className="w-3 h-3 text-indigo-500 shrink-0 group-hover:scale-110" />
+                                </button>
+                              ) : (
+                                <span className="text-slate-400 text-[11px] italic">No file</span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3 text-slate-500 text-[11px] max-w-[150px] truncate">{loan.remarks || '—'}</td>
+                            {!isReadOnly && (
+                              <td className="py-2.5 px-3 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteLoan(loan.id)}
+                                  className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                  title="Remove Loan Record"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -3115,6 +3180,47 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                   onChange={(e) => setLoanForm(prev => ({ ...prev, remarks: e.target.value }))}
                   className="w-full px-3 py-2 border border-slate-300 rounded-xl outline-none"
                 />
+              </div>
+
+              {/* Loan Document / PDF Attachment Upload */}
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-dashed border-slate-300 space-y-2">
+                <label className="block font-bold text-slate-800 uppercase flex items-center justify-between text-[11px]">
+                  <span className="flex items-center gap-1.5 text-indigo-700">
+                    <Paperclip className="w-3.5 h-3.5 text-indigo-600" />
+                    Attach Loan Document / PDF / Scanned Copy
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-normal lowercase">(optional: PDF, Image, Scan)</span>
+                </label>
+
+                {loanForm.filename ? (
+                  <div className="flex items-center justify-between p-2.5 bg-white border border-indigo-200 rounded-lg shadow-2xs">
+                    <div className="flex items-center gap-2 truncate pr-2">
+                      <FileText className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <span className="font-bold text-slate-800 truncate text-xs">{loanForm.filename}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setLoanForm(prev => ({ ...prev, filename: undefined, dataUrl: undefined, fileId: undefined, mimeType: undefined }))}
+                      className="p-1 text-slate-400 hover:text-rose-600 rounded-md transition-colors"
+                      title="Remove file"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="flex items-center justify-center gap-2 py-2.5 px-3 bg-white hover:bg-indigo-50/50 border border-slate-300 hover:border-indigo-300 rounded-xl cursor-pointer transition-all text-xs font-bold text-slate-700 hover:text-indigo-700 shadow-2xs">
+                      <Upload className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Choose PDF or Document to Insert</span>
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf,image/*"
+                        onChange={handleLoanFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                )}
               </div>
             </div>
 

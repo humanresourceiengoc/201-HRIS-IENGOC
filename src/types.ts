@@ -89,6 +89,10 @@ export interface GovLoanRecord {
   endDate?: string;
   status: 'ACTIVE' | 'FULLY_PAID' | 'ON_HOLD';
   remarks?: string;
+  filename?: string;
+  dataUrl?: string;
+  fileId?: string;
+  mimeType?: string;
 }
 
 export interface AttendanceRecord {

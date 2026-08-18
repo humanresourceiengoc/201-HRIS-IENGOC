@@ -344,7 +344,7 @@ export const exportEmployeesToGoogleSheets = async (
     'Email 1',
     'Email 2',
     'Email 3',
-    'Name',
+    'Company / Employer',
     'Date Hired',
     'Department',
     'Position',

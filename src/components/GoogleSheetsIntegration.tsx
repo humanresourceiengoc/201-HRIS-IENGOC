@@ -263,7 +263,7 @@ export const GoogleSheetsIntegration: React.FC<GoogleSheetsIntegrationProps> = (
     var headerRow2 = [
       '', 'EE ID', 'Last', 'First', 'Middle', '', '',
       'Cell No.', 'Email 1', 'Email 2', 'Email 3',
-      'Name', 'Date Hired', 'Department', 'Position', 'Bio ID', 'New Bio ID', 'Status',
+      'Company / Employer', 'Date Hired', 'Department', 'Position', 'Bio ID', 'New Bio ID', 'Status',
       '',
       'SSS', 'PHILHEALTH', 'HDMF', 'TIN'
     ];

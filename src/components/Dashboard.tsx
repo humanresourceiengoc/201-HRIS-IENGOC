@@ -493,29 +493,61 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                   {/* Performance Evaluation Checkpoints */}
                   <div className="mt-3 grid grid-cols-2 gap-2 text-[10px]">
-                    <div className={`p-2 rounded-lg border flex items-center gap-1.5 ${
+                    <div className={`p-2 rounded-lg border flex items-center gap-2 ${
                       employee.perfReviews?.month3Done
                         ? 'bg-emerald-950/40 border-emerald-700/50 text-emerald-300'
-                        : 'bg-slate-900/40 border-slate-700 text-slate-400'
+                        : 'bg-slate-900/60 border-slate-700/80 text-slate-300'
                     }`}>
-                      <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${employee.perfReviews?.month3Done ? 'text-emerald-400' : 'text-slate-600'}`} />
-                      <div>
-                        <span className="font-bold block">3rd Month Review</span>
-                        <span className="text-[9px] opacity-80">{employee.perfReviews?.month3Done ? 'Completed' : `Due: ${status.month3Due}`}</span>
+                      {employee.perfReviews?.month3Done ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                      ) : (
+                        <Clock className="w-3.5 h-3.5 shrink-0 text-blue-400" />
+                      )}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold truncate">3rd Month Review</span>
+                          <span className={`text-[8px] font-extrabold uppercase px-1 py-0.2 rounded ${
+                            employee.perfReviews?.month3Done 
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                              : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                          }`}>
+                            {employee.perfReviews?.month3Done ? 'Done' : 'Upcoming'}
+                          </span>
+                        </div>
+                        <span className="text-[9px] text-slate-400 block pt-0.5">
+                          {employee.perfReviews?.month3Done ? 'Evaluation Completed' : `Due: ${status.month3Due}`}
+                        </span>
                       </div>
                     </div>
 
-                    <div className={`p-2 rounded-lg border flex items-center gap-1.5 ${
+                    <div className={`p-2 rounded-lg border flex items-center gap-2 ${
                       employee.perfReviews?.month5Done
                         ? 'bg-emerald-950/40 border-emerald-700/50 text-emerald-300'
                         : isUrgent
                         ? 'bg-amber-950/50 border-amber-600/50 text-amber-200'
-                        : 'bg-slate-900/40 border-slate-700 text-slate-400'
+                        : 'bg-slate-900/60 border-slate-700/80 text-slate-300'
                     }`}>
-                      <Clock className={`w-3.5 h-3.5 shrink-0 ${employee.perfReviews?.month5Done ? 'text-emerald-400' : 'text-amber-400'}`} />
-                      <div>
-                        <span className="font-bold block">5th Month Final Eval</span>
-                        <span className="text-[9px] opacity-80">{employee.perfReviews?.month5Done ? 'Completed' : `Due: ${status.month5Due}`}</span>
+                      {employee.perfReviews?.month5Done ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                      ) : (
+                        <Clock className={`w-3.5 h-3.5 shrink-0 ${isUrgent ? 'text-amber-400' : 'text-slate-400'}`} />
+                      )}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold truncate">5th Month Final Eval</span>
+                          <span className={`text-[8px] font-extrabold uppercase px-1 py-0.2 rounded ${
+                            employee.perfReviews?.month5Done 
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                              : isUrgent
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse'
+                              : 'bg-slate-700/50 text-slate-400 border border-slate-600'
+                          }`}>
+                            {employee.perfReviews?.month5Done ? 'Done' : isUrgent ? 'Action Required' : 'Pending'}
+                          </span>
+                        </div>
+                        <span className="text-[9px] text-slate-400 block pt-0.5">
+                          {employee.perfReviews?.month5Done ? 'Evaluation Completed' : `Due: ${status.month5Due}`}
+                        </span>
                       </div>
                     </div>
                   </div>

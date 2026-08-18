@@ -121,6 +121,7 @@ export interface Employee {
   lastName: string;
   middleName?: string;
   suffix?: string; // Jr., Sr., III, II, IV, PhD, etc.
+  nickname?: string;
   preferredName?: string;
   photoUrl?: string;
   photoFileId?: string;
@@ -259,12 +260,24 @@ export interface Employee {
   goalsKpis?: string;
   developmentPlan?: string;
   perfReviews?: {
+    month1Done?: boolean;
+    month1Date?: string;
+    month1Notes?: string;
+    month2Done?: boolean;
+    month2Date?: string;
+    month2Notes?: string;
     month3Done?: boolean;
     month3Date?: string;
     month3Notes?: string;
+    month4Done?: boolean;
+    month4Date?: string;
+    month4Notes?: string;
     month5Done?: boolean;
     month5Date?: string;
     month5Notes?: string;
+    month6Done?: boolean;
+    month6Date?: string;
+    month6Notes?: string;
   };
 
   // Training & Development

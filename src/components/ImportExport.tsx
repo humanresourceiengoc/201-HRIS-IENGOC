@@ -194,11 +194,12 @@ export const ImportExport: React.FC<ImportExportProps> = ({
     // Row 2: Sub Headers
     const subHeaders = [
       '', 'EE ID', 'Last', 'First', 'Middle', '', '', 'Cell No.', 'Email 1', 'Email 2', 'Email 3',
-      'Company / Employer', 'Date Hired', 'Department', 'Position', 'Bio ID', 'New Bio ID', 'Status', '',
+      'Nickname / Name', 'Date Hired', 'Department', 'Position', 'Bio ID', 'New Bio ID', 'Status', '',
       'SSS', 'PHILHEALTH', 'HDMF', 'TIN'
     ];
 
     const dataRows = dataList.map((emp, index) => {
+      const nickname = emp.nickname || emp.preferredName || emp.firstName || '';
       return [
         index + 1,
         emp.empId || '',
@@ -211,7 +212,7 @@ export const ImportExport: React.FC<ImportExportProps> = ({
         emp.companyEmail || '',
         emp.personalEmail || '',
         emp.email3 || '',
-        emp.company ? emp.company.toUpperCase() : company.toUpperCase(),
+        nickname,
         emp.dateHired || '',
         emp.department || '',
         emp.position || '',
@@ -800,7 +801,7 @@ export const ImportExport: React.FC<ImportExportProps> = ({
                 <span className="px-2 py-0.5 bg-indigo-900/70 text-indigo-200 rounded font-bold border border-indigo-700/60">9. Email 1</span>
                 <span className="px-2 py-0.5 bg-indigo-900/70 text-indigo-200 rounded font-bold border border-indigo-700/60">10. Email 2</span>
                 <span className="px-2 py-0.5 bg-indigo-900/70 text-indigo-200 rounded font-bold border border-indigo-700/60">11. Email 3</span>
-                <span className="px-2 py-0.5 bg-purple-900/70 text-purple-200 rounded font-bold border border-purple-700/60">12. Name</span>
+                <span className="px-2 py-0.5 bg-purple-900/70 text-purple-200 rounded font-bold border border-purple-700/60">12. Nickname / Name</span>
                 <span className="px-2 py-0.5 bg-purple-900/70 text-purple-200 rounded font-bold border border-purple-700/60">13. Date Hired</span>
                 <span className="px-2 py-0.5 bg-purple-900/70 text-purple-200 rounded font-bold border border-purple-700/60">14. Department</span>
                 <span className="px-2 py-0.5 bg-purple-900/70 text-purple-200 rounded font-bold border border-purple-700/60">15. Position</span>

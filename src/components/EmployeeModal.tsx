@@ -879,6 +879,21 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 </div>
 
                 <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nickname / Preferred Name</label>
+                  <input
+                    type="text"
+                    readOnly={isReadOnly}
+                    value={formData.nickname || formData.preferredName || ''}
+                    onChange={(e) => {
+                      handleChange('nickname', e.target.value);
+                      handleChange('preferredName', e.target.value);
+                    }}
+                    placeholder="e.g. Joy, Bong, Jun"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold read-only:bg-slate-50"
+                  />
+                </div>
+
+                <div>
                   <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Suffix (e.g. Jr., Sr., III)</label>
                   <input
                     type="text"
@@ -1410,75 +1425,62 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                     </div>
                   )}
 
-                  {/* Review Notes Inputs */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                    <div className="bg-slate-800/90 p-3.5 rounded-xl border border-slate-700 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                          <Check className={`w-4 h-4 ${reviews.month3Done ? 'text-emerald-400' : 'text-slate-500'}`} />
-                          3rd Month Performance Review
-                        </label>
-                        {!isReadOnly && (
-                          <label className="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={reviews.month3Done || false}
-                              onChange={(e) => setFormData(prev => ({
-                                ...prev,
-                                perfReviews: { ...prev.perfReviews, month3Done: e.target.checked }
-                              }))}
-                              className="rounded border-slate-600"
-                            />
-                            <span>Completed</span>
-                          </label>
-                        )}
-                      </div>
-                      <textarea
-                        rows={2}
-                        readOnly={isReadOnly}
-                        value={reviews.month3Notes || ''}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          perfReviews: { ...prev.perfReviews, month3Notes: e.target.value }
-                        }))}
-                        placeholder="Notes on 3rd month performance rating, attendance, skills assessment..."
-                        className="w-full p-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 outline-none"
-                      />
-                    </div>
+                  {/* Review Notes Inputs (1st to 6th Month Grid) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+                    {[
+                      { key: 'month1', label: '1st Month Review', due: probStatus?.month1Due, placeholder: '1st month initial orientation and onboarding progress...' },
+                      { key: 'month2', label: '2nd Month Review', due: probStatus?.month2Due, placeholder: '2nd month workflow learning and task handling...' },
+                      { key: 'month3', label: '3rd Month Performance Review', due: probStatus?.month3Due, placeholder: '3rd month performance rating, attendance, skills assessment...' },
+                      { key: 'month4', label: '4th Month Review', due: probStatus?.month4Due, placeholder: '4th month mid-probation milestone & KPIs check...' },
+                      { key: 'month5', label: '5th Month Final Eval (Decision)', due: probStatus?.month5Due, placeholder: 'Recommendation by supervisor for regularization...' },
+                      { key: 'month6', label: '6th Month (Regularization)', due: probStatus?.month6Due, placeholder: 'Final regular appointment status & contract issuance...' },
+                    ].map((m) => {
+                      const isDoneKey = `${m.key}Done` as keyof typeof reviews;
+                      const isNotesKey = `${m.key}Notes` as keyof typeof reviews;
+                      const isDone = !!reviews[isDoneKey];
+                      const notesVal = (reviews[isNotesKey] as string) || '';
 
-                    <div className="bg-slate-800/90 p-3.5 rounded-xl border border-slate-700 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                          <Check className={`w-4 h-4 ${reviews.month5Done ? 'text-emerald-400' : 'text-slate-500'}`} />
-                          5th Month Final Evaluation (Regularization Decision)
-                        </label>
-                        {!isReadOnly && (
-                          <label className="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={reviews.month5Done || false}
-                              onChange={(e) => setFormData(prev => ({
-                                ...prev,
-                                perfReviews: { ...prev.perfReviews, month5Done: e.target.checked }
-                              }))}
-                              className="rounded border-slate-600"
-                            />
-                            <span>Completed</span>
-                          </label>
-                        )}
-                      </div>
-                      <textarea
-                        rows={2}
-                        readOnly={isReadOnly}
-                        value={reviews.month5Notes || ''}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          perfReviews: { ...prev.perfReviews, month5Notes: e.target.value }
-                        }))}
-                        placeholder="Final recommendation by department head for regularization..."
-                        className="w-full p-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 outline-none"
-                      />
-                    </div>
+                      return (
+                        <div key={m.key} className="bg-slate-800/90 p-3 rounded-xl border border-slate-700 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold text-amber-300 flex items-center gap-1.5 truncate">
+                              <Check className={`w-3.5 h-3.5 shrink-0 ${isDone ? 'text-emerald-400' : 'text-slate-500'}`} />
+                              <span className="truncate">{m.label}</span>
+                            </label>
+                            {!isReadOnly && (
+                              <label className="flex items-center gap-1 text-[11px] text-slate-300 cursor-pointer shrink-0">
+                                <input
+                                  type="checkbox"
+                                  checked={isDone}
+                                  onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    perfReviews: { ...prev.perfReviews, [isDoneKey]: e.target.checked }
+                                  }))}
+                                  className="rounded border-slate-600 w-3.5 h-3.5"
+                                />
+                                <span>Done</span>
+                              </label>
+                            )}
+                          </div>
+                          {m.due && (
+                            <div className="text-[10px] text-slate-400 font-mono">
+                              Due Date: <span className="text-slate-300 font-semibold">{m.due}</span>
+                            </div>
+                          )}
+                          <textarea
+                            rows={2}
+                            readOnly={isReadOnly}
+                            value={notesVal}
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              perfReviews: { ...prev.perfReviews, [isNotesKey]: e.target.value }
+                            }))}
+                            placeholder={m.placeholder}
+                            className="w-full p-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 outline-none placeholder:text-slate-500"
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );

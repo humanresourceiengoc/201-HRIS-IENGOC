@@ -263,7 +263,7 @@ export const GoogleSheetsIntegration: React.FC<GoogleSheetsIntegrationProps> = (
     var headerRow2 = [
       '', 'EE ID', 'Last', 'First', 'Middle', '', '',
       'Cell No.', 'Email 1', 'Email 2', 'Email 3',
-      'Company / Employer', 'Date Hired', 'Department', 'Position', 'Bio ID', 'New Bio ID', 'Status',
+      'Nickname / Name', 'Date Hired', 'Department', 'Position', 'Bio ID', 'New Bio ID', 'Status',
       '',
       'SSS', 'PHILHEALTH', 'HDMF', 'TIN'
     ];
@@ -287,6 +287,7 @@ export const GoogleSheetsIntegration: React.FC<GoogleSheetsIntegrationProps> = (
     
     // Append Employee Data Rows (23 columns)
     var rows = (payload.employees || []).map(function(emp, idx) {
+      var nickname = emp.nickname || emp.preferredName || emp.firstName || '';
       return [
         emp.no || (idx + 1),
         emp.eeId || '',
@@ -299,7 +300,7 @@ export const GoogleSheetsIntegration: React.FC<GoogleSheetsIntegrationProps> = (
         emp.email1 || '',
         emp.email2 || '',
         emp.email3 || '',
-        emp.companyName || payload.companyName || '',
+        nickname,
         emp.dateHired || '',
         emp.department || '',
         emp.position || '',
@@ -632,7 +633,7 @@ export const GoogleSheetsIntegration: React.FC<GoogleSheetsIntegrationProps> = (
             <span className="px-2 py-0.5 bg-indigo-900/60 text-indigo-200 rounded font-bold border border-indigo-700/50">9. Email 1</span>
             <span className="px-2 py-0.5 bg-indigo-900/60 text-indigo-200 rounded font-bold border border-indigo-700/50">10. Email 2</span>
             <span className="px-2 py-0.5 bg-indigo-900/60 text-indigo-200 rounded font-bold border border-indigo-700/50">11. Email 3</span>
-            <span className="px-2 py-0.5 bg-purple-900/60 text-purple-200 rounded font-bold border border-purple-700/50">12. Name</span>
+            <span className="px-2 py-0.5 bg-purple-900/60 text-purple-200 rounded font-bold border border-purple-700/50">12. Nickname / Name</span>
             <span className="px-2 py-0.5 bg-purple-900/60 text-purple-200 rounded font-bold border border-purple-700/50">13. Date Hired</span>
             <span className="px-2 py-0.5 bg-purple-900/60 text-purple-200 rounded font-bold border border-purple-700/50">14. Department</span>
             <span className="px-2 py-0.5 bg-purple-900/60 text-purple-200 rounded font-bold border border-purple-700/50">15. Position</span>

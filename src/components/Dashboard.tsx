@@ -491,65 +491,51 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                   </div>
 
-                  {/* Performance Evaluation Checkpoints */}
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-[10px]">
-                    <div className={`p-2 rounded-lg border flex items-center gap-2 ${
-                      employee.perfReviews?.month3Done
-                        ? 'bg-emerald-950/40 border-emerald-700/50 text-emerald-300'
-                        : 'bg-slate-900/60 border-slate-700/80 text-slate-300'
-                    }`}>
-                      {employee.perfReviews?.month3Done ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
-                      ) : (
-                        <Clock className="w-3.5 h-3.5 shrink-0 text-blue-400" />
-                      )}
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold truncate">3rd Month Review</span>
-                          <span className={`text-[8px] font-extrabold uppercase px-1 py-0.2 rounded ${
-                            employee.perfReviews?.month3Done 
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
-                              : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                          }`}>
-                            {employee.perfReviews?.month3Done ? 'Done' : 'Upcoming'}
-                          </span>
+                  {/* Performance Evaluation Checkpoints (1st to 6th Month) */}
+                  <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-[10px]">
+                    {[
+                      { num: 1, label: '1st Month', done: employee.perfReviews?.month1Done, due: status.month1Due },
+                      { num: 2, label: '2nd Month', done: employee.perfReviews?.month2Done, due: status.month2Due },
+                      { num: 3, label: '3rd Month', done: employee.perfReviews?.month3Done, due: status.month3Due },
+                      { num: 4, label: '4th Month', done: employee.perfReviews?.month4Done, due: status.month4Due },
+                      { num: 5, label: '5th Month (Decision)', done: employee.perfReviews?.month5Done, due: status.month5Due, isDecision: true },
+                      { num: 6, label: '6th Month (Regular)', done: employee.perfReviews?.month6Done, due: status.month6Due, isFinal: true },
+                    ].map((step) => {
+                      const isDueSoon = !step.done && status.daysRemaining <= (6 - step.num + 1) * 30 && status.daysRemaining > (6 - step.num) * 30;
+                      return (
+                        <div
+                          key={step.num}
+                          className={`p-2 rounded-lg border flex flex-col justify-between min-h-[56px] transition-all ${
+                            step.done
+                              ? 'bg-emerald-950/40 border-emerald-700/50 text-emerald-300'
+                              : step.isDecision && isUrgent
+                              ? 'bg-amber-950/50 border-amber-600/50 text-amber-200'
+                              : 'bg-slate-900/60 border-slate-700/80 text-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="font-extrabold truncate text-[9.5px]">{step.label}</span>
+                            {step.done ? (
+                              <CheckCircle2 className="w-3 h-3 shrink-0 text-emerald-400" />
+                            ) : (
+                              <Clock className={`w-3 h-3 shrink-0 ${step.isDecision && isUrgent ? 'text-amber-400' : 'text-blue-400'}`} />
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between text-[8.5px]">
+                            <span className="text-slate-400 truncate">Due: {step.due}</span>
+                            <span className={`font-black uppercase px-1 py-0.2 rounded text-[7.5px] ${
+                              step.done
+                                ? 'bg-emerald-500/20 text-emerald-300'
+                                : step.isDecision && isUrgent
+                                ? 'bg-amber-500/20 text-amber-300'
+                                : 'bg-slate-700/60 text-slate-300'
+                            }`}>
+                              {step.done ? 'Done' : 'Pending'}
+                            </span>
+                          </div>
                         </div>
-                        <span className="text-[9px] text-slate-400 block pt-0.5">
-                          {employee.perfReviews?.month3Done ? 'Evaluation Completed' : `Due: ${status.month3Due}`}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className={`p-2 rounded-lg border flex items-center gap-2 ${
-                      employee.perfReviews?.month5Done
-                        ? 'bg-emerald-950/40 border-emerald-700/50 text-emerald-300'
-                        : isUrgent
-                        ? 'bg-amber-950/50 border-amber-600/50 text-amber-200'
-                        : 'bg-slate-900/60 border-slate-700/80 text-slate-300'
-                    }`}>
-                      {employee.perfReviews?.month5Done ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
-                      ) : (
-                        <Clock className={`w-3.5 h-3.5 shrink-0 ${isUrgent ? 'text-amber-400' : 'text-slate-400'}`} />
-                      )}
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold truncate">5th Month Final Eval</span>
-                          <span className={`text-[8px] font-extrabold uppercase px-1 py-0.2 rounded ${
-                            employee.perfReviews?.month5Done 
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
-                              : isUrgent
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse'
-                              : 'bg-slate-700/50 text-slate-400 border border-slate-600'
-                          }`}>
-                            {employee.perfReviews?.month5Done ? 'Done' : isUrgent ? 'Action Required' : 'Pending'}
-                          </span>
-                        </div>
-                        <span className="text-[9px] text-slate-400 block pt-0.5">
-                          {employee.perfReviews?.month5Done ? 'Evaluation Completed' : `Due: ${status.month5Due}`}
-                        </span>
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
               );

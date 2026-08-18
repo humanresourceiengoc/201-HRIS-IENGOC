@@ -80,6 +80,7 @@ export const syncViaAppsScript = async (
       email1: emp.companyEmail || '',
       email2: emp.personalEmail || '',
       email3: emp.email3 || '',
+      nickname: emp.nickname || emp.preferredName || emp.firstName || '',
       companyName: emp.company === 'iencc' 
         ? 'INDUSTRIAL ENERGIES CONST. CORP.' 
         : (emp.company === 'seb' ? 'SUPERIOR ENERGIES BUILDERS & DEVELOPMENT CORP.' : companyName),
@@ -344,7 +345,7 @@ export const exportEmployeesToGoogleSheets = async (
     'Email 1',
     'Email 2',
     'Email 3',
-    'Company / Employer',
+    'Nickname / Name',
     'Date Hired',
     'Department',
     'Position',
@@ -359,9 +360,7 @@ export const exportEmployeesToGoogleSheets = async (
   ];
 
   const masterlistRows = employees.map((emp, idx) => {
-    const companyTitle = emp.company === 'iencc' 
-      ? 'INDUSTRIAL ENERGIES CONST. CORP.' 
-      : (emp.company === 'seb' ? 'SUPERIOR ENERGIES BUILDERS & DEVELOPMENT CORP.' : companyName);
+    const employeeNickname = emp.nickname || emp.preferredName || emp.firstName || '';
 
     return [
       idx + 1,
@@ -375,7 +374,7 @@ export const exportEmployeesToGoogleSheets = async (
       emp.companyEmail || '',
       emp.personalEmail || '',
       emp.email3 || '',
-      companyTitle,
+      employeeNickname,
       emp.dateHired || emp.dateStarted || '',
       emp.department || '',
       emp.position || '',
@@ -703,6 +702,8 @@ export const fetchEmployeesFromGoogleSheet = async (
       firstName: getVal(['first', 'firstname']),
       middleName: getVal(['middle', 'middlename']),
       suffix: getVal(['suffix']),
+      nickname: getVal(['nickname', 'preferred name']),
+      preferredName: getVal(['nickname', 'preferred name']),
       department: getVal(['department']),
       position: getVal(['position', 'title', 'role']),
       bioId: getVal(['bio id', 'biometric id']),

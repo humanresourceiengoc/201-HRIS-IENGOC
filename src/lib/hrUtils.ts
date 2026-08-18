@@ -46,8 +46,12 @@ export interface ProbationaryStatus {
   daysRemaining: number;
   statusText: string;
   statusSeverity: 'urgent' | 'warning' | 'normal' | 'passed';
+  month1Due: string;
+  month2Due: string;
   month3Due: string;
+  month4Due: string;
   month5Due: string;
+  month6Due: string;
 }
 
 export function getProbationaryStatus(employee: Employee): ProbationaryStatus | null {
@@ -65,22 +69,29 @@ export function getProbationaryStatus(employee: Employee): ProbationaryStatus | 
   const hiredDate = new Date(employee.dateHired);
   if (isNaN(hiredDate.getTime())) return null;
 
-  // 6 months regularization date
-  const regDate = new Date(hiredDate);
-  regDate.setMonth(regDate.getMonth() + 6);
+  // 1 to 6 months review dates
+  const m1Date = new Date(hiredDate);
+  m1Date.setMonth(m1Date.getMonth() + 1);
 
-  // 3rd month review date
+  const m2Date = new Date(hiredDate);
+  m2Date.setMonth(m2Date.getMonth() + 2);
+
   const m3Date = new Date(hiredDate);
   m3Date.setMonth(m3Date.getMonth() + 3);
 
-  // 5th month review date
+  const m4Date = new Date(hiredDate);
+  m4Date.setMonth(m4Date.getMonth() + 4);
+
   const m5Date = new Date(hiredDate);
   m5Date.setMonth(m5Date.getMonth() + 5);
+
+  const m6Date = new Date(hiredDate);
+  m6Date.setMonth(m6Date.getMonth() + 6);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const diffTime = regDate.getTime() - today.getTime();
+  const diffTime = m6Date.getTime() - today.getTime();
   const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
   let statusSeverity: 'urgent' | 'warning' | 'normal' | 'passed' = 'normal';
@@ -100,12 +111,16 @@ export function getProbationaryStatus(employee: Employee): ProbationaryStatus | 
   return {
     isProbationary: true,
     dateHired: employee.dateHired,
-    regularizationDate: regDate.toISOString().split('T')[0],
+    regularizationDate: m6Date.toISOString().split('T')[0],
     daysRemaining,
     statusText,
     statusSeverity,
+    month1Due: m1Date.toISOString().split('T')[0],
+    month2Due: m2Date.toISOString().split('T')[0],
     month3Due: m3Date.toISOString().split('T')[0],
+    month4Due: m4Date.toISOString().split('T')[0],
     month5Due: m5Date.toISOString().split('T')[0],
+    month6Due: m6Date.toISOString().split('T')[0],
   };
 }
 

@@ -172,6 +172,60 @@ export const BlankInfoSheetModal: React.FC<BlankInfoSheetModalProps> = ({ compan
                 <strong>INSTRUCTIONS:</strong> Please complete all sections clearly and legibly in <u>BLOCK CAPITAL LETTERS</u>. Mark <strong>N/A</strong> for non-applicable fields. This document forms an essential part of your official HR 201 Personnel File.
               </div>
 
+              {/* EMPLOYMENT DETAILS (EMPLOYEE ID, DATE HIRED, POSITION, DEPARTMENT) */}
+              <div className="space-y-3 bg-slate-50/80 p-4 rounded-xl border border-slate-300">
+                <div className="flex items-center justify-between border-b border-slate-300 pb-1.5">
+                  <h2 className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+                    EMPLOYMENT DETAILS / DESIGNATION (FOR HR / EMPLOYEE RECORD)
+                  </h2>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Official HR 201 Field</span>
+                </div>
+
+                <div className="grid grid-cols-4 gap-3">
+                  <div className="border-b-2 border-slate-800 pb-1 bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
+                    <span className="block text-[9px] font-black text-blue-900 uppercase tracking-wider">Employee ID No. *</span>
+                    <div className="h-5 text-xs font-mono font-bold text-slate-400 flex items-center"></div>
+                  </div>
+                  <div className="border-b-2 border-slate-800 pb-1 bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
+                    <span className="block text-[9px] font-black text-blue-900 uppercase tracking-wider">Date Hired (MM/DD/YYYY) *</span>
+                    <div className="h-5 text-xs font-bold text-slate-400 flex items-center"></div>
+                  </div>
+                  <div className="border-b-2 border-slate-800 pb-1 bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
+                    <span className="block text-[9px] font-black text-blue-900 uppercase tracking-wider">Position / Job Title *</span>
+                    <div className="h-5 text-xs font-bold text-slate-400 flex items-center"></div>
+                  </div>
+                  <div className="border-b-2 border-slate-800 pb-1 bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
+                    <span className="block text-[9px] font-black text-blue-900 uppercase tracking-wider">Department / Unit *</span>
+                    <div className="h-5 text-xs font-bold text-slate-400 flex items-center"></div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 pt-1">
+                  <div className="border-b border-slate-300 pb-1">
+                    <span className="block text-[9px] font-bold text-slate-600 uppercase">Employment Classification</span>
+                    <div className="text-[9.5px] text-slate-700 font-medium flex items-center gap-2 pt-0.5">
+                      <span>[ ] Regular</span>
+                      <span>[ ] Probationary</span>
+                      <span>[ ] Contractual</span>
+                      <span>[ ] Project-Based</span>
+                    </div>
+                  </div>
+                  <div className="border-b border-slate-300 pb-1">
+                    <span className="block text-[9px] font-bold text-slate-600 uppercase">Location / Branch</span>
+                    <div className="text-[9.5px] text-slate-700 font-medium flex items-center gap-3 pt-0.5">
+                      <span>[ ] Mandaluyong Head Office</span>
+                      <span>[ ] Legazpi, Albay</span>
+                      <span>[ ] Site / Project</span>
+                    </div>
+                  </div>
+                  <div className="border-b border-slate-300 pb-1">
+                    <span className="block text-[9px] font-bold text-slate-600 uppercase">Biometrics / Bio ID No.</span>
+                    <div className="h-4"></div>
+                  </div>
+                </div>
+              </div>
+
               {/* SECTION I: PERSONAL INFORMATION */}
               <div className="space-y-3">
                 <h2 className="text-xs font-black uppercase tracking-wider bg-slate-900 text-white px-3 py-1 rounded">
@@ -638,6 +692,42 @@ export const BlankInfoSheetModal: React.FC<BlankInfoSheetModalProps> = ({ compan
           <div className="w-14 h-14 border border-dashed border-slate-500 rounded flex flex-col items-center justify-center text-center p-0.5 bg-slate-50 shrink-0">
             <span className="text-[6.5px] font-black uppercase text-slate-500 leading-tight">Attach Recent</span>
             <span className="text-[7.5px] font-black text-slate-800">2x2 Photo</span>
+          </div>
+        </div>
+
+        {/* Employment Details Designation Block */}
+        <div className="space-y-0.5 border border-slate-300 p-1.5 rounded bg-slate-50/60">
+          <div className="grid grid-cols-4 gap-2">
+            <div className="border-b border-slate-600 pb-0.5">
+              <span className="block text-[7px] font-black text-slate-800 uppercase">Employee ID No. *</span>
+              <div className="h-2.5"></div>
+            </div>
+            <div className="border-b border-slate-600 pb-0.5">
+              <span className="block text-[7px] font-black text-slate-800 uppercase">Date Hired *</span>
+              <div className="h-2.5"></div>
+            </div>
+            <div className="border-b border-slate-600 pb-0.5">
+              <span className="block text-[7px] font-black text-slate-800 uppercase">Position / Job Title *</span>
+              <div className="h-2.5"></div>
+            </div>
+            <div className="border-b border-slate-600 pb-0.5">
+              <span className="block text-[7px] font-black text-slate-800 uppercase">Department / Unit *</span>
+              <div className="h-2.5"></div>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2 pt-0.5">
+            <div className="border-b border-slate-300 pb-0.5">
+              <span className="block text-[6.5px] font-bold text-slate-600 uppercase">Employment Status</span>
+              <div className="text-[6.5px] text-slate-700 flex items-center gap-1.5">[ ] Reg [ ] Prob [ ] Cont [ ] Proj</div>
+            </div>
+            <div className="border-b border-slate-300 pb-0.5">
+              <span className="block text-[6.5px] font-bold text-slate-600 uppercase">Location / Branch</span>
+              <div className="text-[6.5px] text-slate-700 flex items-center gap-1.5">[ ] Mandaluyong [ ] Albay [ ] Site</div>
+            </div>
+            <div className="border-b border-slate-300 pb-0.5">
+              <span className="block text-[6.5px] font-bold text-slate-600 uppercase">Biometrics / Bio ID</span>
+              <div className="h-2"></div>
+            </div>
           </div>
         </div>
 

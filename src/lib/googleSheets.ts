@@ -82,8 +82,8 @@ export const syncViaAppsScript = async (
       email3: emp.email3 || '',
       nickname: emp.nickname || emp.preferredName || emp.firstName || '',
       companyName: emp.company === 'iencc' 
-        ? 'INDUSTRIAL ENERGIES CONST. CORP.' 
-        : (emp.company === 'seb' ? 'SUPERIOR ENERGIES BUILDERS & DEVELOPMENT CORP.' : companyName),
+        ? 'Integrated and effective navigation Consultancy Corp' 
+        : (emp.company === 'seb' ? 'SEB Equipment and Supply Corp' : companyName),
       dateHired: emp.dateHired || emp.dateStarted || '',
       department: emp.department || '',
       position: emp.position || '',

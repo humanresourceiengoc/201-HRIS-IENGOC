@@ -23,7 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenGoogleSheets
 }) => {
   const isSeb = company === 'seb';
-  const companyName = isSeb ? 'SEB Equipment' : 'IENCC';
+  const companyName = isSeb ? 'SEB Equipment' : 'IEN Consultancy';
   const activeBg = isSeb ? 'bg-teal-50 text-teal-800' : 'bg-blue-50 text-blue-800';
   const activeIcon = isSeb ? 'text-teal-600' : 'text-blue-600';
 

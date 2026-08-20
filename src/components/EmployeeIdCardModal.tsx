@@ -23,8 +23,8 @@ export const EmployeeIdCardModal: React.FC<EmployeeIdCardModalProps> = ({
   if (!isOpen || !employee) return null;
 
   const isSeb = company === 'seb';
-  const companyName = isSeb ? 'SEB EQUIPMENT CORP.' : 'INTEGRATED AND EFFECTIVE NAVIGATION CONSULTANCY CORP.';
-  const shortCompanyName = isSeb ? 'SEB EQUIPMENT CORP.' : 'IEN CONSULTANCY CORP.';
+  const companyName = isSeb ? 'SEB EQUIPMENT AND SUPPLY CORP.' : 'INTEGRATED AND EFFECTIVE NAVIGATION CONSULTANCY CORP.';
+  const shortCompanyName = isSeb ? 'SEB EQUIPMENT & SUPPLY CORP.' : 'IEN CONSULTANCY CORP.';
   const accentGradient = isSeb
     ? 'from-teal-600 via-cyan-600 to-emerald-600'
     : 'from-blue-700 via-indigo-600 to-sky-600';

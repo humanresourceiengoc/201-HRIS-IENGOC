@@ -243,7 +243,18 @@ export const GoogleSheetsIntegration: React.FC<GoogleSheetsIntegrationProps> = (
     }
   };
 
-  const sampleAppsScriptCode = `function doPost(e) {
+  const sampleAppsScriptCode = `function doGet(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheetUrl = ss.getUrl();
+  return HtmlService.createHtmlOutput(
+    '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=' + sheetUrl + '">' +
+    '<style>body{font-family:sans-serif;padding:24px;text-align:center;background:#0f172a;color:#f8fafc;}</style></head>' +
+    '<body><h2>Google Sheet Webhook Active</h2><p>Redirecting to your Google Sheet...</p>' +
+    '<a href="' + sheetUrl + '" style="color:#38bdf8;font-weight:bold;text-decoration:none;">Open Google Sheet &rarr;</a></body></html>'
+  ).setTitle('HRIS Google Sheet Masterlist');
+}
+
+function doPost(e) {
   try {
     var payload = JSON.parse(e.postData.contents);
     var ss = SpreadsheetApp.getActiveSpreadsheet();

@@ -694,7 +694,7 @@ export default function App() {
             </div>
             <GoogleSheetsIntegration
               company={company}
-              companyName={company === 'iencc' ? 'I-ENERGIES CONSTRUCTION CORPORATION' : 'SUPERIOR ENERGIES BUILDERS & DEVELOPMENT CORP.'}
+              companyName={company === 'iencc' ? 'Integrated and effective navigation Consultancy Corp' : 'SEB Equipment and Supply Corp'}
               userRole={currentUser.role}
               employees={employees}
               onRefreshData={loadCompanyData}
